@@ -7,670 +7,598 @@
 ---
 
 ## 📋 Tabla de Contenidos
-1. [Requisitos Mínimos](#requisitos-mínimos)
-2. [Configuración Inicial](#configuración-inicial)
-3. [Estructura del Proyecto](#estructura-del-proyecto)
-4. [Arquitectura y Componentes](#arquitectura-y-componentes)
-5. [Cómo Probar que Funciona](#cómo-probar-que-funciona)
-6. [Desarrollo de Lógica de Negocio](#desarrollo-de-lógica-de-negocio)
-7. [Estándares de Código](#estándares-de-código)
-8. [Comandos Útiles](#comandos-útiles)
-9. [Solución de Problemas](#solución-de-problemas)
+
+- [Requisitos Previos](#requisitos-previos)
+- [Configuración Inicial](#configuración-inicial)
+- [Autenticación con GitHub Packages](#autenticación-con-github-packages)
+- [Configuración de IntelliJ IDEA](#configuración-de-intellij-idea)
+- [Compilación y Ejecución](#compilación-y-ejecución)
+- [Configuración del Bot](#configuración-del-bot)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Herramientas de Calidad de Código](#herramientas-de-calidad-de-código)
 
 ---
 
-## 🎯 Requisitos Mínimos
+## 🔧 Requisitos Previos
 
-### Software Necesario
-1. **Java Development Kit (JDK) 25**
-   - Descargar de: https://www.oracle.com/java/technologies/downloads/
-   - Verificar instalación: `java -version`
-   - Debe mostrar versión 25.x.x
+Antes de comenzar, asegúrate de tener instalado:
 
-2. **Git**
-   - Descargar de: https://git-scm.com/
-   - Verificar: `git --version`
+1. **Java 25** (JDK 25)
+   - Descarga desde: https://jdk.java.net/25/
+   - Verifica la instalación: `java -version`
 
-3. **IDE Recomendado**
-   - IntelliJ IDEA Community/Ultimate (recomendado)
-   - Eclipse con soporte Java 25
-   - VS Code con extensión Java
+2. **IntelliJ IDEA** (Community o Ultimate)
+   - Descarga desde: https://www.jetbrains.com/idea/download/
+
+3. **Git**
+   - Descarga desde: https://git-scm.com/downloads
+   - Verifica la instalación: `git --version`
 
 4. **Cuenta de GitHub**
-   - Necesaria para acceder al SDK privado
-   - Crear token de acceso personal (PAT)
-
-### Conocimientos Previos Recomendados
-- Java básico (clases, interfaces, excepciones)
-- Conceptos de programación orientada a objetos
-- Uso básico de Git
-- JSON básico
+   - Necesaria para acceder al repositorio privado y al SDK
 
 ---
 
 ## ⚙️ Configuración Inicial
 
-### Paso 1: Clonar el Repositorio
+### 1. Clonar el Repositorio
+
+Si el repositorio es privado, necesitarás permisos de acceso. Contacta al instructor para ser agregado al repositorio.
+
 ```bash
-git clone https://github.com/tu-usuario/Proyecto-Avanzada-Java.git
-cd Proyecto-Avanzada-Java
+# Clonar usando HTTPS (te pedirá credenciales)
+git clone https://github.com/HellSoft-Col/stock-market.git
+
+# O usando SSH (requiere configurar llaves SSH)
+git clone git@github.com:HellSoft-Col/stock-market.git
+
+# Navegar al directorio del proyecto base
+cd stock-market/sdk/java/spacial-trading-bot-base
 ```
 
-### Paso 2: Configurar Credenciales de GitHub
-El proyecto usa un SDK privado de GitHub Packages. Necesitas configurar tus credenciales:
+### 2. Autenticación con GitHub Packages
 
-1. **Crear archivo `gradle.properties`** en la raíz del proyecto (copia del sample):
+El proyecto utiliza el SDK `websocket-client` que está alojado en GitHub Packages. Necesitas autenticarte para descargarlo.
+
+#### 2.1 Generar un Personal Access Token (PAT)
+
+1. Ve a GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
+2. Haz clic en **"Generate new token (classic)"**
+3. Dale un nombre descriptivo (ej: "Trading Bot SDK Access")
+4. Selecciona los siguientes scopes:
+   - ✅ `read:packages` (obligatorio)
+   - ✅ `repo` (si el repositorio es privado)
+5. Haz clic en **"Generate token"**
+6. **¡IMPORTANTE!** Copia el token inmediatamente (solo se muestra una vez)
+
+#### 2.2 Configurar las Credenciales
+
+Crea el archivo `gradle.properties` en la raíz del proyecto:
+
 ```bash
-copy gradle.properties.sample gradle.properties
+cp gradle.properties.sample gradle.properties
 ```
 
-2. **Editar `gradle.properties`** con tus credenciales:
+Edita `gradle.properties` y reemplaza los valores:
+
 ```properties
+# GitHub Packages Authentication
 gpr.user=TU_USUARIO_GITHUB
-gpr.token=TU_TOKEN_GITHUB
+gpr.token=ghp_tu_token_aqui
 
+# Gradle optimizations
 org.gradle.daemon=true
 org.gradle.caching=true
 org.gradle.configuration-cache=true
 ```
 
-3. **Crear GitHub Personal Access Token (PAT)**:
-   - Ve a GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-   - Click "Generate new token (classic)"
-   - Selecciona el scope: `read:packages`
-   - Copia el token generado y pégalo en `gradle.properties`
+**⚠️ IMPORTANTE:** El archivo `gradle.properties` está en `.gitignore` y **NO debe subirse a Git** porque contiene información sensible.
 
-### Paso 3: Configurar el Archivo de Configuración
-1. **Crear archivo de configuración** (copia del sample):
+---
+
+## 💻 Configuración de IntelliJ IDEA
+
+### 1. Importar el Proyecto
+
+1. Abre IntelliJ IDEA
+2. Selecciona **"Open"** (no "New Project")
+3. Navega hasta el directorio `spacial-trading-bot-base`
+4. Selecciona el archivo `build.gradle.kts`
+5. En el diálogo, selecciona **"Open as Project"**
+6. IntelliJ detectará automáticamente que es un proyecto Gradle
+
+### 2. Configurar el JDK 25
+
+1. Ve a **File** → **Project Structure** (o `Cmd+;` en Mac, `Ctrl+Alt+Shift+S` en Windows/Linux)
+2. En **"Project"**:
+   - **SDK:** Selecciona o agrega Java 25
+   - **Language level:** 25 (Preview)
+3. Haz clic en **"OK"**
+
+### 3. Sincronizar Gradle
+
+IntelliJ sincronizará automáticamente las dependencias. Si no lo hace:
+
+1. Abre el panel de **Gradle** (lado derecho de la ventana)
+2. Haz clic en el ícono de **"Reload All Gradle Projects"** (🔄)
+
+Si obtienes un error de autenticación:
+- Verifica que `gradle.properties` exista y tenga las credenciales correctas
+- Verifica que tu token de GitHub tenga el scope `read:packages`
+
+### 4. Configurar Lombok (opcional)
+
+El proyecto usa Lombok para reducir código repetitivo:
+
+1. Ve a **File** → **Settings** → **Plugins**
+2. Busca "Lombok" e instala el plugin
+3. Reinicia IntelliJ
+4. Ve a **Settings** → **Build, Execution, Deployment** → **Compiler** → **Annotation Processors**
+5. Marca **"Enable annotation processing"**
+
+### 5. Importar Configuración de Formato
+
+El proyecto incluye configuración de formato de código:
+
+1. Ve a **File** → **Settings** → **Editor** → **Code Style** → **Java**
+2. Haz clic en el ícono de engranaje ⚙️ → **Import Scheme** → **Eclipse XML Profile**
+3. Selecciona el archivo `config/eclipse-format.xml`
+4. Haz clic en **"OK"**
+
+---
+
+## 🏗️ Compilación y Ejecución
+
+### Usando IntelliJ IDEA
+
+#### Compilar el Proyecto
+
+1. Abre el panel de **Gradle** (lado derecho)
+2. Navega a: **spacial-trading-bot-base** → **Tasks** → **build**
+3. Doble clic en **"build"**
+
+O desde el terminal integrado:
 ```bash
-copy src\main\resources\config.sample.json src\main\resources\config.json
+./gradlew build
 ```
 
-2. **Editar `src\main\resources\config.json`** con tus credenciales del servidor:
+#### Ejecutar el Programa
+
+1. Abre la clase `tech.hellsoft.trading.Main`
+2. Haz clic derecho en el archivo o en el método `main()`
+3. Selecciona **"Run 'Main.main()'"**
+
+O desde el terminal:
+```bash
+./gradlew run
+```
+
+### Usando la Terminal (Gradle)
+
+```bash
+# Compilar el proyecto
+./gradlew build
+
+# Compilar sin ejecutar tests
+./gradlew build -x test
+
+# Ejecutar el programa
+./gradlew run
+
+# Limpiar y compilar
+./gradlew clean build
+
+# Ejecutar tests
+./gradlew test
+
+# Ver todas las tareas disponibles
+./gradlew tasks
+```
+
+---
+
+## 📖 Entendiendo el Código de Ejemplo
+
+El archivo `Main.java` contiene un ejemplo **simple y minimal** que muestra cómo conectarse al servidor de trading. Es un punto de partida para que implementes tu propia lógica.
+
+### Estructura del Ejemplo
+
+```java
+public static void main(String[] args) {
+    // 1️⃣ Cargar configuración (apiKey, team, host)
+    Configuration config = ConfigLoader.load("src/main/resources/config.json");
+    
+    // 2️⃣ Crear conector y tu bot
+    ConectorBolsa connector = new ConectorBolsa();
+    MyTradingBot bot = new MyTradingBot();
+    connector.addListener(bot);
+    
+    // 3️⃣ Conectar al servidor
+    connector.conectar(config.host(), config.apiKey());
+    
+    // 4️⃣ Mantener el programa corriendo
+    Thread.currentThread().join();
+}
+```
+
+### Clase MyTradingBot (Tu Implementación)
+
+El ejemplo incluye una clase interna `MyTradingBot` que implementa `EventListener`. Aquí es donde **tú implementarás tu estrategia de trading**:
+
+#### Eventos Principales que Debes Manejar:
+
+| Evento | Cuándo se Dispara | Qué Hacer |
+|--------|-------------------|-----------|
+| `onLoginOk()` | Conexión exitosa | Inicializar tu estado (balance, inventario inicial) |
+| `onTicker()` | Actualización de precios | Decidir si comprar/vender basado en precios |
+| `onFill()` | Orden ejecutada | Actualizar tu inventario y balance local |
+| `onBalanceUpdate()` | Cambio en balance | Actualizar tu registro de dinero disponible |
+| `onInventoryUpdate()` | Cambio en inventario | Actualizar tu registro de productos |
+| `onError()` | Error del servidor | Manejar errores y reintentar si es necesario |
+
+### Patrón "No Else" (Guard Clauses)
+
+Nota cómo cada método usa **guard clauses** en lugar de `if-else`:
+
+```java
+@Override
+public void onTicker(TickerMessage ticker) {
+    // ✅ Guard clause: salir temprano si no hay datos
+    if (ticker == null) {
+        return;
+    }
+    
+    // Lógica principal cuando ticker es válido
+    System.out.println("Precio: " + ticker.getMid());
+    
+    // TODO: Tu estrategia de trading aquí
+}
+```
+
+Este patrón es **obligatorio** según `AGENTS.md`. Evita anidación y hace el código más legible.
+
+### ¿Qué Debes Implementar?
+
+1. **Estado del Bot**: Agrega variables de instancia para rastrear:
+   ```java
+   private double balance;
+   private Map<String, Integer> inventory;
+   private Map<String, Double> prices;
+   ```
+
+2. **Lógica de Trading**: En `onTicker()`, implementa:
+   - Detectar oportunidades de compra/venta
+   - Calcular ganancias potenciales
+   - Enviar órdenes usando el `ConectorBolsa`
+
+3. **Producción**: Si tu rol permite producir:
+   - Verifica ingredientes en `onInventoryUpdate()`
+   - Calcula cuánto producir (algoritmo recursivo)
+   - Envía comando de producción
+
+4. **Gestión de Errores**: En `onError()`:
+   - Registra errores
+   - Implementa lógica de retry
+   - Ajusta tu estrategia
+
+### Ejemplo de Extensión (Para Estudiantes)
+
+```java
+private static class MyTradingBot implements EventListener {
+    // Estado del bot
+    private double currentBalance = 0;
+    private Map<String, Integer> inventory = new HashMap<>();
+    private Map<String, Double> lastPrices = new HashMap<>();
+    
+    @Override
+    public void onLoginOk(LoginOKMessage loginOk) {
+        if (loginOk == null) {
+            return;
+        }
+        
+        // Inicializar estado
+        currentBalance = loginOk.getCurrentBalance();
+        System.out.println("Balance inicial: $" + currentBalance);
+    }
+    
+    @Override
+    public void onTicker(TickerMessage ticker) {
+        if (ticker == null) {
+            return;
+        }
+        
+        // Guardar precio
+        lastPrices.put(ticker.getProduct(), ticker.getMid());
+        
+        // Estrategia simple: comprar si el precio es bajo
+        if (ticker.getMid() < 50.0 && currentBalance > 100.0) {
+            // TODO: Enviar orden de compra usando ConectorBolsa
+            System.out.println("💡 Oportunidad de compra: " + ticker.getProduct());
+        }
+    }
+    
+    // ... otros métodos
+}
+```
+
+### Siguientes Pasos
+
+1. **Ejecuta el ejemplo** para ver cómo funciona
+2. **Lee los eventos** que llegan del servidor
+3. **Implementa tu estrategia** en los métodos TODO
+4. **Consulta AGENTS.md** para patrones de diseño
+5. **Agrega tests** para tu lógica
+
+---
+
+## 🤖 Configuración del Bot
+
+### 1. Crear el Archivo de Configuración
+
+El bot requiere un archivo `config.json` en `src/main/resources/`:
+
+```bash
+cp src/main/resources/config.sample.json src/main/resources/config.json
+```
+
+### 2. Editar la Configuración
+
+Edita `src/main/resources/config.json`:
+
 ```json
 {
-  "apiKey": "TU_API_KEY_DEL_SERVIDOR",
-  "team": "Nombre de Tu Equipo",
+  "apiKey": "TK-TU-TOKEN-AQUI",
+  "team": "Nombre de tu Equipo",
   "host": "wss://trading.hellsoft.tech/ws"
 }
 ```
 
-⚠️ **IMPORTANTE**: Los archivos `gradle.properties` y `config.json` están en `.gitignore`. 
-**NUNCA los subas a Git** porque contienen información sensible.
+**Dónde obtener tu API Key:**
+- Tu instructor te proporcionará el token de acceso para el servidor de trading
+- **NO compartas tu token** con otros equipos
+- **NO subas `config.json` a Git** (está en `.gitignore`)
 
-### Paso 4: Verificar la Instalación
-```bash
-# En Windows
-gradlew.bat build
+### 3. Configuración de Logging (Opcional)
 
-# Debería compilar sin errores
+El proyecto incluye `simplelogger.properties` para controlar los logs del SDK:
+
+```properties
+# src/main/resources/simplelogger.properties
+org.slf4j.simpleLogger.defaultLogLevel=WARN
+```
+
+**Para ver más detalles del SDK** (útil para debugging), cambia a `INFO` o `DEBUG`:
+
+```properties
+org.slf4j.simpleLogger.defaultLogLevel=INFO
+# O para debugging detallado:
+# org.slf4j.simpleLogger.defaultLogLevel=DEBUG
 ```
 
 ---
 
 ## 📁 Estructura del Proyecto
 
+### Código Fuente (Simplificado - Solo 4 archivos)
+
+El proyecto base incluye **solo lo esencial** para que empieces:
+
 ```
-Proyecto-Avanzada-Java/
-├── src/main/java/tech/hellsoft/trading/
-│   ├── Main.java                          # Punto de entrada de la aplicación
-│   ├── config/
-│   │   └── Configuration.java             # Record para configuración
-│   ├── exception/
-│   │   ├── ConfiguracionInvalidaException.java
-│   │   └── TradingException.java          # Excepciones del dominio
-│   ├── model/
-│   │   ├── Recipe.java                    # Modelo de recetas de productos
-│   │   └── Role.java                      # Modelo de roles de jugador
-│   ├── service/
-│   │   ├── TradingService.java            # Interface principal de trading
-│   │   ├── UIService.java                 # Interface para UI/consola
-│   │   └── impl/
-│   │       ├── SDKTradingService.java     # Implementación con SDK
-│   │       └── ConsoleUIService.java      # Implementación de consola
-│   └── util/
-│       ├── ConfigLoader.java              # Utilidad para cargar config
-│       └── TradingUtils.java              # Utilidades generales
-├── src/main/resources/
-│   ├── config.json                        # TU configuración (no subir a Git)
-│   └── config.sample.json                 # Plantilla de configuración
-├── build.gradle.kts                       # Configuración de Gradle
-├── gradle.properties                      # TUS credenciales (no subir a Git)
-└── gradle.properties.sample               # Plantilla de credenciales
+src/main/java/tech/hellsoft/trading/
+├── Main.java                        # 🚀 TU PUNTO DE PARTIDA
+│                                    #    - Ejemplo simple de conexión
+│                                    #    - Clase MyTradingBot con TODOs
+│                                    #    - ¡Aquí implementas tu estrategia!
+│
+├── config/
+│   └── Configuration.java           # Record con apiKey, team, host
+│
+├── exception/
+│   └── ConfiguracionInvalidaException.java  # Errores de configuración
+│
+└── util/
+    └── ConfigLoader.java            # Carga config.json
+```
+
+**¡Solo 4 archivos!** Todo lo demás lo crearás tú según necesites.
+
+### Estructura Completa del Proyecto
+
+```
+spacial-trading-bot-base/
+├── config/                          # Herramientas de calidad de código
+│   ├── checkstyle/checkstyle.xml   # Reglas de estilo
+│   ├── pmd/ruleset.xml              # Análisis estático
+│   └── eclipse-format.xml           # Formato de código
+│
+├── gradle/wrapper/                  # Gradle wrapper (no tocar)
+│
+├── src/
+│   └── main/
+│       ├── java/                    # 👈 TU CÓDIGO AQUÍ (4 archivos base)
+│       └── resources/
+│           └── config.sample.json   # Plantilla de configuración
+│
+├── build.gradle.kts                 # Dependencias y plugins
+├── settings.gradle.kts              # Configuración Gradle
+├── gradle.properties.sample         # Plantilla (copiar y editar)
+├── .java-version                    # Java 25
+├── .gitignore                       # Archivos a ignorar
+├── AGENTS.md                        # 📖 Guía de diseño (léela!)
+└── README.md                        # Este archivo
+```
+
+### ¿Qué Archivos Crearás Tú?
+
+Según `AGENTS.md`, probablemente necesitarás crear:
+
+```
+src/main/java/tech/hellsoft/trading/
+├── model/
+│   ├── Role.java                    # Datos de tu rol (especies, energía, etc.)
+│   └── Recipe.java                  # Recetas de producción
+│
+├── exception/                       # Tus excepciones de negocio (7 mínimo)
+│   ├── SaldoInsuficienteException.java
+│   ├── InventarioInsuficienteException.java
+│   ├── ProductoNoAutorizadoException.java
+│   ├── IngredientesInsuficientesException.java
+│   ├── RecetaNoEncontradaException.java
+│   └── ...                          # Y más según necesites
+│
+└── strategy/                        # Tu lógica de trading
+    ├── TradingStrategy.java
+    ├── ProductionCalculator.java    # Algoritmo recursivo
+    └── InventoryManager.java
+```
+
+**Principio clave**: Empieza simple, agrega complejidad solo cuando la necesites.
+
+### Archivos que NO deben subirse a Git
+
+Estos archivos están en `.gitignore` porque contienen información sensible o son generados automáticamente:
+
+- `gradle.properties` - Credenciales de GitHub
+- `src/main/resources/config.json` - Token de API del bot
+- `build/` - Archivos compilados
+- `.gradle/` - Cache de Gradle
+- `.idea/workspace.xml` - Configuración personal de IntelliJ
+
+---
+
+## 🔍 Herramientas de Calidad de Código
+
+El proyecto incluye tres herramientas de análisis de código:
+
+### 1. Spotless (Formateo automático)
+
+```bash
+# Verificar el formato del código
+./gradlew spotlessCheck
+
+# Aplicar formato automáticamente
+./gradlew spotlessApply
+```
+
+**Recomendación:** Ejecuta `spotlessApply` antes de cada commit.
+
+### 2. Checkstyle (Estilo de código)
+
+```bash
+# Verificar el estilo de código
+./gradlew checkstyleMain
+./gradlew checkstyleTest
+
+# Ver el reporte en:
+# build/reports/checkstyle/main.html
+```
+
+### 3. PMD (Análisis estático)
+
+```bash
+# Ejecutar análisis estático
+./gradlew pmdMain
+./gradlew pmdTest
+
+# Ver el reporte en:
+# build/reports/pmd/main.html
+```
+
+### Verificar Todo
+
+```bash
+# Ejecutar todas las verificaciones + tests
+./gradlew check
+
+# Formatear y verificar
+./gradlew spotlessApply check
 ```
 
 ---
 
-## 🏗️ Arquitectura y Componentes
+## 🐛 Solución de Problemas Comunes
 
-### Componentes Principales
+### Error: "Could not resolve tech.hellsoft.trading:websocket-client"
 
-#### 1. **Main.java** - Punto de Entrada
-- Inicializa todos los servicios
-- Carga la configuración
-- Maneja el ciclo de vida de la aplicación
-- Gestiona el shutdown gracefully
+**Causa:** No se puede acceder a GitHub Packages.
 
-#### 2. **TradingService** - Servicio Principal
-**Interface**: Define el contrato para operaciones de trading
-```java
-public interface TradingService {
-    void start(Configuration config);
-    void stop();
-    boolean isRunning();
-}
-```
+**Solución:**
+1. Verifica que `gradle.properties` existe y tiene las credenciales correctas
+2. Verifica que tu token de GitHub tenga el scope `read:packages`
+3. Prueba regenerar el token en GitHub
+4. En IntelliJ: **Gradle** → **Reload All Gradle Projects**
 
-**SDKTradingService**: Implementación que:
-- Se conecta al servidor WebSocket
-- Maneja eventos del servidor (login, órdenes, tickers, etc.)
-- **AQUÍ es donde ustedes agregarán la lógica de trading**
+### Error: "Unsupported class file major version 69"
 
-#### 3. **UIService** - Servicio de Interfaz
-- Imprime mensajes en la consola con colores
-- Muestra estado del bot
-- Útil para debugging
+**Causa:** Estás usando una versión de Java anterior a Java 25.
 
-#### 4. **Configuration** - Configuración
-Record inmutable que contiene:
-- `apiKey`: Tu clave de API del servidor
-- `team`: Nombre de tu equipo
-- `host`: URL del servidor WebSocket
+**Solución:**
+1. Instala JDK 25
+2. En IntelliJ: **File** → **Project Structure** → **Project** → **SDK:** Java 25
+3. Reinicia IntelliJ
 
-#### 5. **Modelos de Dominio**
-- **Recipe**: Representa recetas de productos (qué ingredientes se necesitan)
-- **Role**: Representa el rol del jugador (energía, niveles, etc.)
+### El programa no encuentra config.json
 
----
-
-## ✅ Cómo Probar que Funciona
-
-### Prueba 1: Compilación Exitosa
-```bash
-gradlew.bat clean build
-```
-
-**Resultado esperado:**
-```
-BUILD SUCCESSFUL in Xs
-```
-
-### Prueba 2: Ejecutar la Aplicación
-```bash
-gradlew.bat run
-```
-
-**Resultado esperado:**
-```
-╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
-║  🚀 SPACIAL TRADING BOT CLIENT - Java 25 Edition 🚀         ║
-║                                                              ║
-║  🥑 Bolsa Interestelar de Aguacates Andorianos              ║
-║  Ready for trading operations...                            ║
-║                                                              ║
-╚════════════════════════════════════════════════════════════╝
-
-ℹ️  Configuration loaded successfully:
-   Team: Nombre de Tu Equipo
-   Host: wss://trading.hellsoft.tech/ws
-   API Key: sk_t***xxxx
-
-🔌 Connecting to trading server...
-⏳ Waiting for login response...
-✅ Login successful! Ready for trading operations.
-✅ Login OK received!
-   Team: tu-equipo
-   Species: HUMANO
-   Initial Balance: 1000000.0
-   Current Balance: 1000000.0
-
-ℹ️  Press Ctrl+C to shutdown gracefully...
-```
-
-### Prueba 3: Verificar Linting (Calidad de Código)
-```bash
-gradlew.bat checkstyleMain pmdMain
-```
-
-**Resultado esperado:** Sin errores críticos
-
-### Prueba 4: Ejecutar Tests (cuando existan)
-```bash
-gradlew.bat test
-```
-
----
-
-## 💼 Desarrollo de Lógica de Negocio
-
-### ¿Dónde Agregar Tu Código?
-
-#### Opción 1: Modificar SDKTradingService
-El archivo `SDKTradingService.java` ya tiene un `EventListener` interno que recibe eventos del servidor.
-
-**Eventos que recibes del servidor:**
-- `onLoginOk()` - Cuando te conectas exitosamente
-- `onTicker()` - Actualización de precios de mercado
-- `onOffer()` - Ofertas de compra/venta
-- `onFill()` - Cuando se ejecuta una orden
-- `onInventoryUpdate()` - Cambios en tu inventario
-- `onBalanceUpdate()` - Cambios en tu saldo
-- `onOrderAck()` - Confirmación de órdenes
-- `onError()` - Errores del servidor
-
-**Ejemplo de cómo agregar lógica:**
-
-```java
-@Override
-public void onTicker(TickerMessage ticker) {
-    listenerUiService.printStatus("📊",
-        "Ticker update: " + ticker.getProduct() + 
-        " Bid:" + ticker.getBestBid() + 
-        " Ask:" + ticker.getBestAsk());
-    
-    // 🔥 AGREGA TU LÓGICA AQUÍ
-    analizarOportunidadDeCompra(ticker);
-}
-
-private void analizarOportunidadDeCompra(TickerMessage ticker) {
-    // Tu estrategia de trading aquí
-    if (ticker.getBestAsk() < precioObjetivo) {
-        // Enviar orden de compra
-        connector.enviarOrden(...);
-    }
-}
-```
-
-#### Opción 2: Crear Nuevos Servicios
-Puedes crear nuevos servicios especializados:
-
-**Ejemplo: StrategyService**
-```java
-// src/main/java/tech/hellsoft/trading/service/StrategyService.java
-public interface StrategyService {
-    Decision analizarMercado(TickerMessage ticker);
-    boolean deberiaComprar(String producto, double precio);
-    boolean deberiaVender(String producto, double precio);
-}
-```
-
-**Ejemplo: InventoryManager**
-```java
-// src/main/java/tech/hellsoft/trading/service/InventoryManager.java
-public class InventoryManager {
-    private Map<String, Integer> inventarioActual = new HashMap<>();
-    
-    public void actualizar(InventoryUpdateMessage update) {
-        // Mantener registro de tu inventario
-    }
-    
-    public boolean tieneStock(String producto, int cantidad) {
-        return inventarioActual.getOrDefault(producto, 0) >= cantidad;
-    }
-}
-```
-
-### Casos de Uso Típicos
-
-#### Caso 1: Market Maker Simple
-```java
-// Comprar barato, vender caro con un spread
-@Override
-public void onTicker(TickerMessage ticker) {
-    double spread = 0.05; // 5% de ganancia
-    
-    if (ticker.getBestAsk() > 0) {
-        double precioCompra = ticker.getBestAsk();
-        double precioVenta = precioCompra * (1 + spread);
-        
-        // Comprar al mejor precio de venta
-        // Vender a precio + spread
-    }
-}
-```
-
-#### Caso 2: Arbitraje de Productos
-```java
-// Comprar productos básicos, crear productos complejos
-public void intentarCrafteo(Recipe receta) {
-    // 1. Verificar que tienes todos los ingredientes
-    // 2. Calcular costo total de ingredientes
-    // 3. Comparar con precio de venta del producto final
-    // 4. Si es rentable, realizar el crafteo
-}
-```
-
-#### Caso 3: Gestión de Riesgo
-```java
-public class RiskManager {
-    private double maxExposurePorProducto = 0.1; // 10% del capital
-    
-    public boolean puedeComprar(String producto, int cantidad, double precio) {
-        double exposicion = cantidad * precio;
-        double capitalTotal = obtenerCapitalTotal();
-        
-        return exposicion <= (capitalTotal * maxExposurePorProducto);
-    }
-}
-```
-
----
-
-## 📏 Estándares de Código
-
-### Regla de Oro: **NO usar `else`**
-
-❌ **MAL:**
-```java
-if (precio > 100) {
-    comprar();
-} else {
-    vender();
-}
-```
-
-✅ **BIEN:**
-```java
-if (precio > 100) {
-    comprar();
-    return;
-}
-vender();
-```
-
-### Convenciones de Nombres
-
-```java
-// Clases: UpperCamelCase
-public class OrdenManager { }
-
-// Métodos y variables: lowerCamelCase
-private double precioActual;
-public void calcularGanancia() { }
-
-// Constantes: UPPER_SNAKE_CASE
-private static final int MAX_INTENTOS = 3;
-
-// Packages: lowercase
-package tech.hellsoft.trading.strategy;
-```
-
-### Guard Clauses (Cláusulas de Guarda)
-
-✅ Valida parámetros al inicio:
-```java
-public void procesarOrden(Orden orden) {
-    if (orden == null) {
-        throw new IllegalArgumentException("Orden no puede ser null");
-    }
-    if (orden.getCantidad() <= 0) {
-        throw new IllegalArgumentException("Cantidad debe ser positiva");
-    }
-    if (!tieneCapital(orden)) {
-        throw new SaldoInsuficienteException();
-    }
-    
-    // Lógica principal aquí
-    ejecutarOrden(orden);
-}
-```
-
-### Uso de Records (Java 25)
-
-```java
-// Para datos inmutables
-public record OrdenCompra(
-    String producto,
-    int cantidad,
-    double precio,
-    LocalDateTime timestamp
-) {
-    // Validación en el constructor compacto
-    public OrdenCompra {
-        if (cantidad <= 0) {
-            throw new IllegalArgumentException("Cantidad inválida");
-        }
-    }
-}
-```
-
-### Manejo de Excepciones
-
-```java
-// Crea excepciones específicas de tu dominio
-public class CapitalInsuficienteException extends TradingException {
-    public CapitalInsuficienteException(double requerido, double disponible) {
-        super(String.format("Capital insuficiente. Requerido: %.2f, Disponible: %.2f",
-            requerido, disponible));
-    }
-}
-```
-
----
-
-## 🛠️ Comandos Útiles
-
-### Compilación y Build
-```bash
-# Limpiar y compilar todo
-gradlew.bat clean build
-
-# Solo compilar (sin tests ni linting)
-gradlew.bat compileJava
-
-# Ver dependencias
-gradlew.bat dependencies
-```
-
-### Ejecución
-```bash
-# Ejecutar la aplicación
-gradlew.bat run
-
-# Ejecutar con argumentos (si agregas soporte)
-gradlew.bat run --args="--config custom.json"
-```
-
-### Calidad de Código
-```bash
-# Checkstyle (estilo de código)
-gradlew.bat checkstyleMain
-
-# PMD (detección de bugs)
-gradlew.bat pmdMain
-
-# Formatear código automáticamente
-gradlew.bat spotlessApply
-
-# Ver reportes de calidad
-# Abrir: build/reports/checkstyle/main.html
-# Abrir: build/reports/pmd/main.html
-```
-
-### Testing
-```bash
-# Ejecutar todos los tests
-gradlew.bat test
-
-# Ejecutar tests específicos
-gradlew.bat test --tests "ConfigLoaderTest"
-
-# Ver reporte de tests
-# Abrir: build/reports/tests/test/index.html
-```
-
-### Empaquetado
-```bash
-# Crear JAR ejecutable
-gradlew.bat jar
-
-# Crear distribución completa
-gradlew.bat distZip
-
-# El JAR estará en: build/libs/
-# La distribución en: build/distributions/
-```
-
----
-
-## 🐛 Solución de Problemas
-
-### Error: "Configuration file not found"
-**Causa:** No existe `src/main/resources/config.json`
+**Causa:** No has creado el archivo de configuración.
 
 **Solución:**
 ```bash
-copy src\main\resources\config.sample.json src\main\resources\config.json
+cp src/main/resources/config.sample.json src/main/resources/config.json
+# Luego edita config.json con tu API key
 ```
-Luego edita `config.json` con tus credenciales.
 
-### Error: "401 Unauthorized" al compilar
-**Causa:** Credenciales de GitHub incorrectas o faltantes
+### IntelliJ no reconoce las clases del SDK
+
+**Causa:** Las dependencias no se descargaron correctamente.
 
 **Solución:**
-1. Verifica que existe `gradle.properties`
-2. Verifica que `gpr.user` es tu usuario de GitHub
-3. Verifica que `gpr.token` es un PAT válido con permiso `read:packages`
-4. Regenera el token si es necesario
-
-### Error: "Login failed"
-**Causa:** API key incorrecta o servidor no disponible
-
-**Solución:**
-1. Verifica que `config.json` tiene el `apiKey` correcto
-2. Verifica que el servidor está corriendo
-3. Verifica la URL del `host` en `config.json`
-
-### La aplicación se cierra inmediatamente
-**Causa:** Error en la lógica del método `isRunning()`
-
-**Solución:**
-- Revisa los logs en la consola
-- Verifica que `tradingService.start()` se ejecuta correctamente
-- Agrega más logging en `SDKTradingService`
-
-### Errores de Checkstyle/PMD
-**Causa:** Código no cumple con los estándares
-
-**Solución:**
-```bash
-# Ver errores específicos
-gradlew.bat checkstyleMain
-
-# Formatear automáticamente (arregla muchos errores)
-gradlew.bat spotlessApply
-
-# Ver reporte detallado
-# Abrir: build/reports/checkstyle/main.html
-```
-
-### OutOfMemoryError
-**Causa:** Gradle necesita más memoria
-
-**Solución:** Edita `gradle.properties`:
-```properties
-org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
-```
-
-### IDE no reconoce clases del SDK
-**Causa:** Dependencies no sincronizadas
-
-**Solución en IntelliJ:**
-1. Click derecho en el proyecto → "Reload Gradle Project"
-2. File → Invalidate Caches → Invalidate and Restart
-
----
-
-## 🎓 Flujo de Trabajo Recomendado
-
-### Para Empezar a Desarrollar
-
-1. **Crear una rama para tu feature**
-```bash
-git checkout -b feature/mi-estrategia-trading
-```
-
-2. **Escribir el código**
-   - Implementa tu lógica en `SDKTradingService` o crea nuevos servicios
-   - Sigue los estándares de código (no `else`, guard clauses, etc.)
-
-3. **Probar localmente**
-```bash
-gradlew.bat build
-gradlew.bat run
-```
-
-4. **Verificar calidad de código**
-```bash
-gradlew.bat checkstyleMain pmdMain
-gradlew.bat spotlessApply  # Si hay errores de formato
-```
-
-5. **Commit y Push**
-```bash
-git add .
-git commit -m "feat: implementar estrategia de arbitraje"
-git push origin feature/mi-estrategia-trading
-```
-
-6. **Crear Pull Request en GitHub**
-
-### Trabajo en Equipo
-
-- **Comunicación:** Coordinen quién trabaja en qué para evitar conflictos
-- **Code Reviews:** Revisen el código de otros antes de mergear
-- **Testing:** Prueben los cambios de otros en sus máquinas
-- **Documentación:** Comenten código complejo
-- **Git:** Hagan commits pequeños y frecuentes con mensajes claros
+1. **File** → **Invalidate Caches** → **Invalidate and Restart**
+2. Espera a que IntelliJ reconstruya el índice
+3. Si persiste: elimina `.gradle/` y `.idea/`, luego reabre el proyecto
 
 ---
 
 ## 📚 Recursos Adicionales
 
-### Documentación del SDK
-- Ver `ConectorBolsa` y sus métodos
-- Ver DTOs en `tech.hellsoft.trading.dto.server.*`
-- Ver `EventListener` y todos los eventos disponibles
-
-### Java 25 Features
-- Records
-- Pattern Matching
-- Switch Expressions
-- Text Blocks
-
-### Aprende Más
-- **Clean Code:** Libro de Robert C. Martin
-- **Effective Java:** Libro de Joshua Bloch
-- **Refactoring:** Libro de Martin Fowler
+- **Guía de desarrollo:** Lee `AGENTS.md` para entender los principios de diseño
+- **SDK Documentation:** Consulta el Javadoc en GitHub Packages
+- **Java 25 Features:** https://openjdk.org/projects/jdk/25/
 
 ---
 
-## 🎯 Checklist de Inicio Rápido
+## 📝 Notas Importantes
 
-- [ ] Java 25 instalado y verificado
-- [ ] Proyecto clonado
-- [ ] `gradle.properties` creado con tus credenciales de GitHub
-- [ ] `config.json` creado con tu API key
-- [ ] `gradlew.bat build` ejecuta sin errores
-- [ ] `gradlew.bat run` se conecta al servidor y muestra "Login successful"
-- [ ] IDE configurado (IntelliJ recomendado)
-- [ ] Leído AGENTS.md para entender principios de código
-- [ ] Primer commit realizado
+1. **NO subas archivos sensibles a Git:**
+   - `gradle.properties` (credenciales de GitHub)
+   - `config.json` (token de la API del bot)
 
----
+2. **Antes de cada commit:**
+   ```bash
+   ./gradlew spotlessApply
+   ./gradlew check
+   ```
 
-## 💡 Tips Finales
+3. **Para trabajar en equipo:**
+   - Cada miembro necesita su propio `gradle.properties`
+   - Pueden compartir el mismo `config.json` (token del equipo)
+   - Sincronicen cambios frecuentemente con Git
 
-1. **Empieza Simple:** No intentes implementar todo a la vez
-2. **Prueba Frecuentemente:** Ejecuta la app después de cada cambio
-3. **Lee los Logs:** La consola te dice exactamente qué está pasando
-4. **Usa el UIService:** Imprime información para debug
-5. **Pregunta:** Si algo no funciona, pide ayuda al equipo
-6. **Git es tu amigo:** Haz commits frecuentes para poder volver atrás
-7. **Documenta:** Comenta el "por qué", no el "qué"
+4. **Estilo de código:**
+   - El proyecto sigue el principio **"No Else"**
+   - Usa guard clauses, switch expressions, y patrones de diseño
+   - Consulta `AGENTS.md` para detalles
 
 ---
 
-**¡Éxito con el desarrollo! 🚀🥑**
+## 🆘 Soporte
 
+Si tienes problemas:
+
+1. Revisa la sección de **Solución de Problemas** arriba
+2. Consulta con tus compañeros de equipo
+3. Busca en la documentación de Java 25
+4. Contacta al instructor
+
+---
+
+**¡Buena suerte con tu bot de trading! 🚀🥑**

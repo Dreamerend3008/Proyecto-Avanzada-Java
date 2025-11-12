@@ -1,0 +1,7 @@
+INSTRUCCIONES: Renombrar este archivo a .java cuando se implemente la clase
+
+TODO: PERSONA 1 - Implementar ClienteBolsa
+
+Este archivo fue convertido temporalmente a .txt para evitar problemas con Spotless (formato de código).
+Cuando se implemente la clase, renombrar de ClienteBolsa.java.txt a ClienteBolsa.java
+

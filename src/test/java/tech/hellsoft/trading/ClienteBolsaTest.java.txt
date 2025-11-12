@@ -1,0 +1,7 @@
+INSTRUCCIONES: Renombrar este archivo a .java cuando se implementen los tests
+
+TODO: PERSONA 1 - Implementar tests para ClienteBolsa
+
+Este archivo fue convertido temporalmente a .txt para evitar problemas con Spotless (formato de código).
+Cuando se implementen los tests, renombrar de ClienteBolsaTest.java.txt a ClienteBolsaTest.java
+

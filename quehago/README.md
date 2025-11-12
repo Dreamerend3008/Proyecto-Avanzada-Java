@@ -8,7 +8,26 @@ Esta carpeta contiene la distribución equitativa de tareas para el equipo de 3 
 
 ## 📄 Archivos en esta Carpeta
 
-### 1. **TAREAS_PENDIENTES.md** - Lista Maestra
+### 📚 Documentación de Organización
+1. **ORGANIZACION.md** ⭐ **LEER PRIMERO**
+   - Guía completa de cómo organizarse
+   - Estructura de carpetas
+   - Flujo de trabajo con Git
+   - Comandos útiles
+   - Convenciones de código
+
+2. **ARBOL_ARCHIVOS.md**
+   - Árbol visual de todos los archivos creados
+   - Asignación clara de responsabilidades
+   - Estadísticas del proyecto
+
+3. **ESTRUCTURA_CREADA.md**
+   - Resumen de archivos creados
+   - Estado actual del proyecto
+   - Próximos pasos para cada persona
+
+### 📋 Distribución de Tareas
+4. **TAREAS_PENDIENTES.md** - Lista Maestra
 Documento principal que enumera TODAS las tareas pendientes del proyecto, organizadas por prioridad y área.
 
 **Úsalo para:**
@@ -19,7 +38,7 @@ Documento principal que enumera TODAS las tareas pendientes del proyecto, organi
 
 ---
 
-### 2. **PERSONA_1_ClienteBolsa_Consola.md** - Tareas para Desarrollador 1
+### 5. **PERSONA_1_ClienteBolsa_Consola.md** - Tareas para Desarrollador 1
 **Responsable de:** Interfaz y Coordinación
 
 **Componentes:**
@@ -33,7 +52,7 @@ Documento principal que enumera TODAS las tareas pendientes del proyecto, organi
 
 ---
 
-### 3. **PERSONA_2_Estado_Algoritmos.md** - Tareas para Desarrollador 2
+### 6. **PERSONA_2_Estado_Algoritmos.md** - Tareas para Desarrollador 2
 **Responsable de:** Cerebro Matemático
 
 **Componentes:**
@@ -46,7 +65,7 @@ Documento principal que enumera TODAS las tareas pendientes del proyecto, organi
 
 ---
 
-### 4. **PERSONA_3_Validacion_Persistencia.md** - Tareas para Desarrollador 3
+### 7. **PERSONA_3_Validacion_Persistencia.md** - Tareas para Desarrollador 3
 **Responsable de:** Robustez y Seguridad
 
 **Componentes:**
