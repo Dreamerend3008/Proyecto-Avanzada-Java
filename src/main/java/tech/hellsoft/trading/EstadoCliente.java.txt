@@ -1,0 +1,13 @@
+INSTRUCCIONES: Renombrar este archivo a .java cuando se implemente la clase
+
+TODO: PERSONA 2 - Implementar EstadoCliente
+
+Este archivo fue convertido temporalmente a .txt para evitar problemas con Spotless (formato de código).
+Cuando se implemente la clase, renombrar de EstadoCliente.java.txt a EstadoCliente.java
+INSTRUCCIONES: Renombrar este archivo a .java cuando se implemente la clase
+
+TODO: PERSONA 2 - Implementar CalculadoraProduccion
+
+Este archivo fue convertido temporalmente a .txt para evitar problemas con Spotless (formato de código).
+Cuando se implemente la clase, renombrar de CalculadoraProduccion.java.txt a CalculadoraProduccion.java
+
