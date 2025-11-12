@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("application")
-    id("com.diffplug.spotless") version "6.25.0"
+    //id("com.diffplug.spotless") version "6.25.0"
     id("checkstyle")
     id("pmd")
 }
@@ -56,14 +56,14 @@ tasks.test {
     useJUnitPlatform()
 }
 
-spotless {
+/* {
     java {
         eclipse().configFile("${project.rootDir}/config/eclipse-format.xml")
         removeUnusedImports()
         trimTrailingWhitespace()
         endWithNewline()
     }
-}
+}*/
 
 checkstyle {
     toolVersion = "10.12.4"
