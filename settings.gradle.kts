@@ -1,1 +1,0 @@
-rootProject.name = "spacial-trading-bot-base"
