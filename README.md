@@ -1,5 +1,5 @@
 # 🚀 Guía de Desarrollo - Trading Bot Client
-
+# Revision de commit
 > **🆕 ¿Nuevo en el proyecto?** Comienza con **[INDICE.md](documentacion/INDICE.md)** para saber por dónde empezar.
 >
 > **📘 ¿Es tu primer día?** Ve directo a **[TUTORIAL_PRIMER_DIA.md](documentacion/TUTORIAL_PRIMER_DIA.md)** - configuración paso a paso en 2-3 horas.
