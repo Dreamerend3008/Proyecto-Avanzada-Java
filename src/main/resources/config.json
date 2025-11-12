@@ -1,5 +1,5 @@
 {
-  "apiKey": "TK-09jKZrvn0NF11v99j10vT4Fx",
-  "team": "Alquimistas de Palta",
+  "apiKey": "Your team key",
+  "team": "Your team name",
   "host": "wss://trading.hellsoft.tech/ws"
 }
