@@ -2,6 +2,14 @@
 
 Cliente CLI para la Bolsa Interestelar de Aguacates Andorianos - Proyecto base para estudiantes.
 
+> **🆕 ¿Nuevo en el proyecto?** Comienza con **[documentacion/INDICE.md](documentacion/INDICE.md)** para ver todos los recursos disponibles.
+>
+> **📘 ¿Es tu primer día?** Ve directo a **[documentacion/TUTORIAL_PRIMER_DIA.md](documentacion/TUTORIAL_PRIMER_DIA.md)** - configuración paso a paso en 2-3 horas.
+>
+> **💡 ¿Necesitas ejemplos de código?** Consulta **[documentacion/DESARROLLO_EJEMPLOS.md](documentacion/DESARROLLO_EJEMPLOS.md)** con estrategias completas.
+>
+> **🎯 ¿Quieres entender el proyecto completo?** Lee **[GUIA.md](GUIA.md)** con conceptos de trading y explicación del SDK.
+
 ## 📋 Tabla de Contenidos
 
 - [Requisitos Previos](#requisitos-previos)
@@ -222,7 +230,12 @@ public static void main(String[] args) {
 El ejemplo incluye una clase interna `MyTradingBot` que implementa `EventListener`. Aquí es donde **tú implementarás tu estrategia de trading**:
 
 #### Eventos Principales que Debes Manejar:
+| `onOffer()` | Recibiste una oferta | Decidir si aceptar/rechazar la oferta |
+| `onOrderAck()` | Orden confirmada | Registrar que el servidor recibió tu orden |
 
+| `onLogout()` | Desconexión | Cleanup y guardar estado si es necesario |
+| `onRole()` | Información de rol | Guardar capacidades de tu especie |
+| `onRecipe()` | Receta de producción | Guardar receta para producción futura |
 | Evento | Cuándo se Dispara | Qué Hacer |
 |--------|-------------------|-----------|
 | `onLoginOk()` | Conexión exitosa | Inicializar tu estado (balance, inventario inicial) |
@@ -314,6 +327,79 @@ private static class MyTradingBot implements EventListener {
     }
     
     // ... otros métodos
+}
+```
+
+### Casos de Uso Típicos
+
+A continuación, algunos patrones comunes que puedes implementar:
+
+#### Caso 1: Market Maker Simple
+
+Estrategia de comprar barato y vender caro con un spread fijo:
+
+```java
+@Override
+public void onTicker(TickerMessage ticker) {
+    if (ticker == null) {
+        return;
+    }
+    
+    double spread = 0.05; // 5% de ganancia
+    double precioCompra = ticker.getBestAsk();
+    double precioVenta = precioCompra * (1 + spread);
+    
+    // Lógica: comprar al mejor Ask, vender con spread
+    if (currentBalance > precioCompra * 10) {
+        // TODO: Enviar orden de compra
+        System.out.println("💡 Oportunidad: Comprar " + ticker.getProduct());
+    }
+}
+```
+
+#### Caso 2: Arbitraje de Productos
+
+Comprar productos básicos y crear productos complejos si es rentable:
+
+```java
+public void evaluarCrafteo(Recipe receta) {
+    // 1. Calcular costo de ingredientes
+    double costoTotal = 0;
+    for (String ingrediente : receta.getIngredientes().keySet()) {
+        double precio = lastPrices.getOrDefault(ingrediente, 0.0);
+        int cantidad = receta.getIngredientes().get(ingrediente);
+        costoTotal += precio * cantidad;
+    }
+    
+    // 2. Comparar con precio de venta del producto final
+    double precioVenta = lastPrices.getOrDefault(receta.getProducto(), 0.0);
+    
+    // 3. Si es rentable, producir
+    if (precioVenta > costoTotal * 1.2) { // 20% de margen mínimo
+        System.out.println("💰 Crafteo rentable: " + receta.getProducto());
+        // TODO: Verificar ingredientes y producir
+    }
+}
+```
+
+#### Caso 3: Gestión de Riesgo
+
+Limitar exposición por producto para no arriesgar todo el capital:
+
+```java
+private static final double MAX_EXPOSURE_PER_PRODUCT = 0.1; // 10% del capital
+
+public boolean puedeComprar(String producto, int cantidad, double precio) {
+    double exposicion = cantidad * precio;
+    double capitalTotal = currentBalance;
+    
+    // Agregar valor del inventario al capital total
+    for (Map.Entry<String, Integer> item : inventory.entrySet()) {
+        double precioItem = lastPrices.getOrDefault(item.getKey(), 0.0);
+        capitalTotal += item.getValue() * precioItem;
+    }
+    
+    return exposicion <= (capitalTotal * MAX_EXPOSURE_PER_PRODUCT);
 }
 ```
 
@@ -552,13 +638,224 @@ cp src/main/resources/config.sample.json src/main/resources/config.json
 2. Espera a que IntelliJ reconstruya el índice
 3. Si persiste: elimina `.gradle/` y `.idea/`, luego reabre el proyecto
 
+### Error: "Login failed" o "401 Unauthorized" al ejecutar
+
+**Causa:** API Key inválida en config.json.
+
+**Solución:**
+1. Verifica que `src/main/resources/config.json` existe
+2. Verifica que el `apiKey` es correcto (obtén uno nuevo del profesor si es necesario)
+3. Verifica que el `host` es correcto: `wss://trading.hellsoft.tech/ws`
+
+### Gradle se queda en "Downloading" o tarda mucho
+
+**Causa:** Primera compilación descarga dependencias.
+
+**Solución:**
+- Es normal la primera vez (puede tardar 2-5 minutos)
+- Verifica tu conexión a internet
+- Si falla, intenta: `./gradlew clean build --refresh-dependencies`
+
+### Checkstyle o PMD reportan muchos errores
+
+**Causa:** El código no sigue los estándares configurados.
+
+**Solución:**
+1. Primero ejecuta: `./gradlew spotlessApply` (auto-formatea)
+2. Lee los errores específicos en `build/reports/checkstyle/main.html`
+3. La mayoría son por no seguir la regla "No Else"
+4. Consulta `AGENTS.md` para patrones correctos
+
+### Tests fallan con "NullPointerException"
+
+**Causa:** No se cargó la configuración o faltan archivos.
+
+**Solución:**
+1. Verifica que `config.json` existe y tiene todos los campos
+2. En tests, usa mocks o crea una configuración de prueba
+3. Verifica que no estás accediendo a variables sin inicializar
+
+### OutOfMemoryError al compilar
+
+**Causa:** Gradle necesita más memoria.
+
+**Solución:** Edita `gradle.properties` y agrega:
+```properties
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+```
+
+---
+
+## 🛠️ Comandos Útiles
+
+### Compilación y Build
+
+```bash
+# Limpiar y compilar todo
+./gradlew clean build
+
+# Solo compilar (sin tests ni linting)
+./gradlew compileJava
+
+# Ver dependencias del proyecto
+./gradlew dependencies
+
+# Compilar sin ejecutar tests
+./gradlew build -x test
+```
+
+### Ejecución
+
+```bash
+# Ejecutar la aplicación
+./gradlew run
+
+# En Windows
+gradlew.bat run
+
+# Ejecutar con argumentos (si agregas soporte)
+./gradlew run --args="--config custom.json"
+```
+
+### Calidad de Código
+
+```bash
+# Verificar estilo con Checkstyle
+./gradlew checkstyleMain
+
+# Análisis estático con PMD
+./gradlew pmdMain
+
+# Formatear código automáticamente con Spotless
+./gradlew spotlessApply
+
+# Verificar formato sin aplicar cambios
+./gradlew spotlessCheck
+
+# Ejecutar todas las verificaciones
+./gradlew check
+
+# Ver reportes HTML
+# Checkstyle: build/reports/checkstyle/main.html
+# PMD: build/reports/pmd/main.html
+```
+
+### Testing
+
+```bash
+# Ejecutar todos los tests
+./gradlew test
+
+# Ejecutar tests específicos
+./gradlew test --tests "ConfigLoaderTest"
+
+# Ver reporte de tests
+# Abrir: build/reports/tests/test/index.html
+
+# Tests con más detalle
+./gradlew test --info
+```
+
+### Empaquetado
+
+```bash
+# Crear JAR ejecutable
+./gradlew jar
+
+# Crear distribución completa
+./gradlew distZip
+
+# El JAR estará en: build/libs/
+# La distribución en: build/distributions/
+```
+
+### Mantenimiento
+
+```bash
+# Limpiar archivos generados
+./gradlew clean
+
+# Refrescar dependencias (si hay problemas)
+./gradlew clean build --refresh-dependencies
+
+# Ver todas las tareas disponibles
+./gradlew tasks
+
+# Ver información del proyecto
+./gradlew properties
+```
+
+---
+
+## 🎓 Flujo de Trabajo Recomendado
+
+### Desarrollo Diario
+
+1. **Actualizar el código**
+```bash
+git pull origin main
+```
+
+2. **Crear una rama para tu feature**
+```bash
+git checkout -b feature/mi-estrategia-trading
+```
+
+3. **Desarrollar y probar**
+```bash
+# Editar código
+./gradlew spotlessApply  # Formatear
+./gradlew build          # Compilar y verificar
+./gradlew run            # Probar
+```
+
+4. **Verificar calidad antes de commit**
+```bash
+./gradlew spotlessApply check
+```
+
+5. **Commit y push**
+```bash
+git add .
+git commit -m "feat: implementar estrategia de market making"
+git push origin feature/mi-estrategia-trading
+```
+
+### Trabajo en Equipo
+
+- Cada miembro necesita su propio `gradle.properties` (credenciales de GitHub)
+- Pueden compartir el mismo `config.json` (token del equipo)
+- Usar ramas separadas para evitar conflictos
+- Hacer pull requests para revisar código antes de merge
+- Sincronizar cambios frecuentemente
+
 ---
 
 ## 📚 Recursos Adicionales
 
-- **Guía de desarrollo:** Lee `AGENTS.md` para entender los principios de diseño
-- **SDK Documentation:** Consulta el Javadoc en GitHub Packages
+### Documentación del Proyecto
+
+- **[GUIA.md](GUIA.md)** - Guía completa del estudiante con conceptos de trading, explicación del SDK y lore del juego
+- **[AGENTS.md](AGENTS.md)** - Principios de diseño y patrones de código (regla "No Else", guard clauses, etc.)
+- **[documentacion/INDICE.md](documentacion/INDICE.md)** - Índice maestro de toda la documentación
+- **[documentacion/TUTORIAL_PRIMER_DIA.md](documentacion/TUTORIAL_PRIMER_DIA.md)** - Tutorial paso a paso para tu primer día (2-3 horas)
+- **[documentacion/INICIO_RAPIDO.md](documentacion/INICIO_RAPIDO.md)** - Inicio rápido en 5 minutos
+- **[documentacion/DESARROLLO_EJEMPLOS.md](documentacion/DESARROLLO_EJEMPLOS.md)** - Ejemplos completos de estrategias de trading
+- **[documentacion/RESUMEN_DOCUMENTACION.md](documentacion/RESUMEN_DOCUMENTACION.md)** - Resumen ejecutivo de la documentación
+
+### Guías de Git y Configuración
+
+- **[GIT_CHECKLIST.md](GIT_CHECKLIST.md)** - Lista de archivos que deben/no deben estar en Git
+- **[SETUP_VERIFICATION.md](SETUP_VERIFICATION.md)** - Checklist de verificación post-clone
+- **[COMMIT_READY.md](COMMIT_READY.md)** - Verificación de seguridad antes de hacer commit
+
+### Recursos Externos
+
+- **SDK Documentation:** Consulta el Javadoc en GitHub Packages (si está disponible)
 - **Java 25 Features:** https://openjdk.org/projects/jdk/25/
+- **Gradle Documentation:** https://docs.gradle.org/
+- **Checkstyle Rules:** https://checkstyle.org/checks.html
+- **PMD Rules:** https://pmd.github.io/pmd/pmd_rules_java.html
 
 ---
 

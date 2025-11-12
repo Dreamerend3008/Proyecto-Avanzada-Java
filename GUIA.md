@@ -1,104 +1,880 @@
-# 🥑🥑 Bolsa Interestelar de Aguacates
+    // ...getters, setters, otros métodos...
+}
+```
 
-# Andorianos
+### 3⃣ CalculadoraProduccion — El Algoritmo Recursivo (30 líneas)
 
-- 🥑 Bolsa Interestelar de Aguacates Andorianos
+**Propósito:** Calcular qué productos puedes producir con tu inventario actual
 
-###### ◦ Cliente de Trading con SDK — Guía del Estudiante
+**Algoritmo recursivo requerido:**
+```java
+public class CalculadoraProduccion {
+    private Map<String, Recipe> recetas;
+    
+    public boolean puedoProducir(String producto, Map<String, Integer> inventario) {
+        Recipe receta = recetas.get(producto);
+        if (receta == null) {
+            throw new RecetaNoEncontradaException(producto);
+        }
+        
+        // Caso base: verificar ingredientes directos
+        for (Map.Entry<String, Integer> ingrediente : receta.getIngredientes().entrySet()) {
+            String nombreIngrediente = ingrediente.getKey();
+            int cantidadRequerida = ingrediente.getValue();
+            int cantidadDisponible = inventario.getOrDefault(nombreIngrediente, 0);
+            
+            if (cantidadDisponible < cantidadRequerida) {
+                // Caso recursivo: ¿puedo producir el ingrediente faltante?
+                if (!puedoProducir(nombreIngrediente, inventario)) {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    public int maxCantidadProducible(String producto, Map<String, Integer> inventario) {
+        // Calcular máximo producible recursivamente
+    }
+}
+```
 
-###### ◦ Java 25
+### 4⃣ RecetaValidator — Validar Ingredientes (40 líneas)
 
-###### ◦ 🌌 EL LORE
+**Propósito:** Validar que tienes los ingredientes necesarios
 
-###### ▪ Las Tres Leyes de Bodoque:
+```java
+public class RecetaValidator {
+    public void validar(Recipe receta, Map<String, Integer> inventario) 
+            throws IngredientesInsuficientesException {
+        
+        if (receta == null) {
+            throw new RecetaNoEncontradaException("Receta nula");
+        }
+        
+        for (Map.Entry<String, Integer> ingrediente : receta.getIngredientes().entrySet()) {
+            String producto = ingrediente.getKey();
+            int requerido = ingrediente.getValue();
+            int disponible = inventario.getOrDefault(producto, 0);
+            
+            if (disponible < requerido) {
+                throw new IngredientesInsuficientesException(
+                    receta.getProducto(),
+                    String.format("%s (requerido: %d, disponible: %d)", 
+                        producto, requerido, disponible)
+                );
+            }
+        }
+    }
+}
+```
 
-###### ◦ 🎯 TU MISIÓN
+### 5⃣ SnapshotManager — Serialización Binaria (20 líneas)
 
-###### ◦ 🌍 LAS 12 ESPECIES
+**Propósito:** Guardar y cargar el estado del bot
 
-###### ◦ 📚 CONCEPTOS BÁSICOS DE TRADING
+```java
+public class SnapshotManager {
+    public void guardar(EstadoCliente estado, String archivo) throws IOException {
+        try (ObjectOutputStream oos = new ObjectOutputStream(
+                new FileOutputStream(archivo))) {
+            oos.writeObject(estado);
+        }
+    }
+    
+    public EstadoCliente cargar(String archivo) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream ois = new ObjectInputStream(
+                new FileInputStream(archivo))) {
+            return (EstadoCliente) ois.readObject();
+        }
+    }
+}
+```
 
-###### ▪ ¿Qué es una Orden (Order)?
+### 6⃣ ConfigLoader — Lectura de JSON (20 líneas)
 
-###### ▪ Market vs Limit Orders
+**Propósito:** Cargar configuración desde JSON
 
-###### ▪ El Ticker
+```java
+public class ConfigLoader {
+    public static Configuration load(String path) throws ConfiguracionInvalidaException {
+        try {
+            String json = Files.readString(Path.of(path));
+            // Parsear JSON manualmente o con Gson/Jackson
+            // Retornar record Configuration
+        } catch (IOException e) {
+            throw new ConfiguracionInvalidaException("No se pudo leer " + path);
+        }
+    }
+}
+```
 
-###### ▪ El Fill (Ejecución)
+### 7⃣ ConsolaInteractiva — Comandos del Usuario (100-150 líneas)
 
-###### ▪ Las Ofertas (Offers)
+**Propósito:** Interfaz CLI para controlar el bot manualmente
 
-###### ▪ Producción
+**Comandos requeridos:**
 
-###### ▪ El P&L (Profit & Loss)
+#### `login`
+Conectar al servidor
+```
+> login
+Conectando al servidor...
+✅ Conectado! Balance: $1,000,000.00
+```
 
-###### ◦ 🔧 EL SDK: LO QUE TE DAMOS
+#### `status`
+Mostrar estado actual
+```
+> status
+Balance: $1,250,000.00
+P&L: +$250,000.00 (+25%)
+Órdenes activas: 3
+```
 
-###### ▪ ¿Qué es el SDK?
+#### `inventario`
+Mostrar inventario
+```
+> inventario
+AGUACATE_BASICO: 50 unidades
+AGUACATE_PREMIUM: 10 unidades
+FERTILIZANTE: 25 unidades
+```
 
-###### ▪ ⚡ Clase ConectorBolsa
+#### `precios`
+Mostrar precios actuales
+```
+> precios
+AGUACATE_BASICO: Bid $45.50 / Ask $46.00
+AGUACATE_PREMIUM: Bid $120.00 / Ask $125.00
+```
 
-###### ▪ 🎯 Interface EventListener
+#### `comprar <producto> <cantidad> [mensaje]`
+Comprar producto
+```
+> comprar AGUACATE_BASICO 10
+Orden enviada: Comprar 10 AGUACATE_BASICO
+```
 
-###### ▪ 🔄 Clase TareaAutomatica
+#### `vender <producto> <cantidad> [mensaje]`
+Vender producto
+```
+> vender AGUACATE_PREMIUM 5 "Liquidando inventario"
+Orden enviada: Vender 5 AGUACATE_PREMIUM
+```
 
-###### ▪ 📦 DTOs (Data Transfer Objects)
+#### `producir <producto> <basico|premium>`
+Producir producto
+```
+> producir AGUACATE_PREMIUM basico
+Produciendo AGUACATE_PREMIUM (modo básico)...
+✅ Producción completada
+```
 
-###### ◦ 🚨 EXCEPCIONES QUE DEBES IMPLEMENTAR
+#### `ofertas`
+Ver ofertas recibidas
+```
+> ofertas
+[1] Comprar 20 AGUACATE_BASICO a $48.00 (de: Equipo Alpha)
+[2] Vender 5 FERTILIZANTE a $30.00 (de: Equipo Beta)
+```
 
-###### ▪ Excepciones Requeridas
+#### `aceptar <offerId>`
+Aceptar oferta
+```
+> aceptar 1
+✅ Oferta aceptada
+```
 
-###### ▪ Excepciones Opcionales (Bonus)
+#### `rechazar <offerId> [motivo]`
+Rechazar oferta
+```
+> rechazar 2 "Precio muy alto"
+❌ Oferta rechazada
+```
 
-###### ▪ Jerarquía Sugerida
+#### `snapshot save`
+Guardar estado
+```
+> snapshot save
+💾 Estado guardado en: snapshot_2025-11-11_14-30-00.dat
+```
 
-###### ▪ 🚀 Ejemplo de Uso del SDK
+#### `snapshot load`
+Cargar estado
+```
+> snapshot load
+📂 Snapshots disponibles:
+[1] snapshot_2025-11-11_14-30-00.dat
+[2] snapshot_2025-11-11_12-00-00.dat
+Selecciona: 1
+✅ Estado cargado
+```
 
-###### ◦ 💻 LO QUE TÚ IMPLEMENTAS
+#### `resync`
+Resincronizar con el servidor
+```
+> resync
+🔄 Resincronizando con el servidor...
+✅ Estado sincronizado
+```
 
-###### ▪ 1⃣ ClienteBolsa — El Corazón (80-100 líneas)
+#### `ayuda` o `help`
+Mostrar ayuda
+```
+> help
+Comandos disponibles:
+  login                                 - Conectar al servidor
+  status                                - Ver estado actual
+  inventario                            - Ver inventario
+  precios                               - Ver precios de mercado
+  comprar <producto> <cant> [msg]       - Comprar producto
+  vender <producto> <cant> [msg]        - Vender producto
+  producir <producto> <basico|premium>  - Producir producto
+  ofertas                               - Ver ofertas recibidas
+  aceptar <id>                          - Aceptar oferta
+  rechazar <id> [motivo]                - Rechazar oferta
+  snapshot save                         - Guardar estado
+  snapshot load                         - Cargar estado
+  resync                                - Resincronizar con servidor
+  salir                                 - Cerrar programa
+```
 
-###### ▪ 2⃣ EstadoCliente — El Estado del Juego (100 líneas)
+---
 
-###### ▪ 3⃣ CalculadoraProduccion — El Algoritmo Recursivo (30 líneas)
+## 🎓 Criterios de Evaluación
 
-###### ▪ 4⃣ RecetaValidator — Validar Ingredientes (40 líneas)
+Tu proyecto será evaluado según:
 
+1. **Funcionalidad (40%)**
+   - El bot se conecta y opera correctamente
+   - Implementa todas las clases requeridas
+   - Los comandos de consola funcionan
 
-###### ▪ 5⃣ SnapshotManager — Serialización Binaria (20 líneas)
+2. **Calidad de Código (30%)**
+   - Sin uso de `else` (regla estricta)
+   - Pasa Checkstyle, PMD y Spotless
+   - Código limpio y bien estructurado
 
-###### ▪ 6⃣ ConfigLoader — Lectura de JSON (20 líneas)
+3. **Manejo de Excepciones (15%)**
+   - Implementa las 7 excepciones requeridas
+   - Manejo apropiado de errores
+   - Mensajes de error claros
 
-###### ▪ 7⃣ ConsolaInteractiva — Comandos del Usuario (100-150 líneas)
+4. **Algoritmos (15%)**
+   - Algoritmo recursivo de producción funciona
+   - Cálculo de P&L correcto
+   - Estrategia de trading implementada
 
-###### ▪ login
+---
 
-###### ▪ status
+## 🚀 Próximos Pasos
 
-###### ▪ inventario
+1. ✅ Lee esta guía completamente
+2. ✅ Revisa el [TUTORIAL_PRIMER_DIA.md](documentacion/TUTORIAL_PRIMER_DIA.md)
+3. ✅ Configura tu entorno (Java 25, IntelliJ, credenciales)
+4. ✅ Compila y ejecuta el proyecto base
+5. ✅ Implementa las clases requeridas paso a paso
+6. ✅ Prueba tu bot en el servidor
+7. ✅ Itera y mejora tu estrategia
 
-###### ▪ precios
+**¡Buena suerte en la Bolsa Interestelar! 🥑🚀**
 
-###### ▪ comprar <producto> <cantidad> [mensaje]
+# 🥑 Bolsa Interestelar de Aguacates Andorianos
 
-###### ▪ vender <producto> <cantidad> [mensaje]
+## Cliente de Trading con SDK — Guía del Estudiante
 
-###### ▪ producir <producto> <basico|premium>
+**Proyecto:** Trading Bot Client  
+**Tecnología:** Java 25  
+**Fecha:** Noviembre 2025
 
-###### ▪ ofertas
+---
 
-###### ▪ aceptar <offerId>
+## 📋 Tabla de Contenidos
 
-###### ▪ rechazar <offerId> [motivo]
+- [🌌 El Lore](#-el-lore)
+- [🎯 Tu Misión](#-tu-misión)
+- [🌍 Las 12 Especies](#-las-12-especies)
+- [📚 Conceptos Básicos de Trading](#-conceptos-básicos-de-trading)
+- [🔧 El SDK: Lo Que Te Damos](#-el-sdk-lo-que-te-damos)
+- [🚨 Excepciones Que Debes Implementar](#-excepciones-que-debes-implementar)
+- [💻 Lo Que Tú Implementas](#-lo-que-tú-implementas)
 
-###### ▪ snapshot save
+---
 
-###### ▪ snapshot load
+## 🌌 EL LORE
 
-###### ▪ resync
+En el año 2847, la humanidad descubrió el aguacate andoriano, una fruta intergaláctica con propiedades únicas que revolucionó la economía espacial. La **Bolsa Interestelar de Aguacates Andorianos** se convirtió en el centro financiero más importante de la galaxia.
 
-###### ▪ ayuda o help
+### Las Tres Leyes de Bodoque:
 
+1. **Primera Ley:** Todo ser consciente tiene derecho a comerciar aguacates, sin importar su especie o planeta de origen.
+
+2. **Segunda Ley:** El precio justo lo determina el mercado, no los gobiernos. La oferta y la demanda son sagradas.
+
+3. **Tercera Ley:** Quien produce, gana. Quien especula, arriesga. Quien colabora, prospera.
+
+---
+
+## 🎯 TU MISIÓN
+
+Como estudiante de Programación Avanzada, tu misión es crear un **bot de trading automatizado** que opere en la Bolsa Interestelar. Tu bot debe:
+
+1. ✅ **Conectarse** al servidor de trading usando el SDK proporcionado
+2. ✅ **Reaccionar** a eventos del mercado (precios, órdenes, ofertas)
+3. ✅ **Tomar decisiones** inteligentes de compra/venta
+4. ✅ **Producir** productos complejos a partir de ingredientes básicos
+5. ✅ **Maximizar** tu ganancia (P&L - Profit & Loss)
+6. ✅ **Gestionar** tu inventario y capital eficientemente
+
+**Restricciones técnicas:**
+- Debes usar Java 25 con características modernas (records, switch expressions, pattern matching)
+- NO puedes usar `else` - solo guard clauses y patrones funcionales
+- Debes implementar al menos 7 excepciones personalizadas
+- Tu código debe pasar Checkstyle, PMD y Spotless
+
+---
+
+## 🌍 LAS 12 ESPECIES
+
+Cada equipo es asignado a una de las 12 especies galácticas, cada una con habilidades únicas:
+
+| Especie | Habilidad Especial | Ventaja |
+|---------|-------------------|---------|
+| 🧑 **HUMANO** | Adaptabilidad | Balance entre producción y comercio |
+| 👽 **GRISES** | Telepatía | Predicción de tendencias de mercado |
+| 🦎 **REPTILIANOS** | Paciencia | Estrategias a largo plazo |
+| 🤖 **SINTÉTICOS** | Cálculo | Análisis matemático preciso |
+| 👾 **INSECTOIDES** | Coordinación | Operaciones en enjambre |
+| 🐙 **CEFALÓPODOS** | Multitarea | Múltiples operaciones simultáneas |
+| 🦅 **AVIANOS** | Visión | Detección temprana de oportunidades |
+| 🐺 **CÁNIDOS** | Lealtad | Colaboración en equipo |
+| 🦁 **FELINOS** | Agilidad | Respuesta rápida a cambios |
+| 🌊 **ACUÁTICOS** | Fluidez | Adaptación a volatilidad |
+| 🌿 **VEGETALES** | Crecimiento | Producción eficiente |
+| ⚡ **ENERGÉTICOS** | Velocidad | Transacciones instantáneas |
+
+Tu especie determina tu **rol** en el juego, que incluye:
+- Capacidad de producción (energía disponible)
+- Productos que puedes fabricar
+- Bonificaciones especiales
+
+---
+
+## 📚 CONCEPTOS BÁSICOS DE TRADING
+
+### ¿Qué es una Orden (Order)?
+
+Una **orden** es una instrucción que envías al mercado para comprar o vender un producto.
+
+```java
+// Ejemplo de orden
+connector.enviarOrden("AGUACATE_BASICO", 10, 50.0, "BUY");
+// Producto, Cantidad, Precio, Tipo
+```
+
+### Market vs Limit Orders
+
+#### Market Order (Orden de Mercado)
+- Se ejecuta **inmediatamente** al mejor precio disponible
+- Garantiza ejecución, pero no garantiza precio
+- Útil cuando necesitas comprar/vender YA
+
+#### Limit Order (Orden Limitada)
+- Solo se ejecuta a un precio específico o mejor
+- Puede NO ejecutarse si el mercado no alcanza tu precio
+- Útil para maximizar ganancias o minimizar pérdidas
+
+```java
+// Market order: compra al mejor precio disponible
+connector.enviarOrden("AGUACATE_PREMIUM", 5, 0.0, "BUY");
+
+// Limit order: solo compra si el precio es <= 45.0
+connector.enviarOrden("AGUACATE_PREMIUM", 5, 45.0, "BUY");
+```
+
+### El Ticker
+
+El **ticker** es la actualización continua de precios del mercado. Contiene:
+
+- `bestBid`: Mejor precio de COMPRA (alguien quiere comprar a este precio)
+- `bestAsk`: Mejor precio de VENTA (alguien quiere vender a este precio)
+- `mid`: Precio medio entre bid y ask
+- `product`: Producto al que se refiere
+
+```java
+@Override
+public void onTicker(TickerMessage ticker) {
+    System.out.println("Producto: " + ticker.getProduct());
+    System.out.println("Bid: $" + ticker.getBestBid());
+    System.out.println("Ask: $" + ticker.getBestAsk());
+    System.out.println("Mid: $" + ticker.getMid());
+}
+```
+
+**El spread** es la diferencia entre ask y bid. Un spread pequeño indica un mercado líquido.
+
+### El Fill (Ejecución)
+
+Un **fill** ocurre cuando tu orden se ejecuta (total o parcialmente).
+
+```java
+@Override
+public void onFill(FillMessage fill) {
+    // Tu orden fue ejecutada!
+    System.out.println("Ejecutado: " + fill.getQuantity() + " unidades");
+    System.out.println("Precio: $" + fill.getPrice());
+    System.out.println("Total: $" + fill.getCost());
+    
+    // Actualiza tu inventario y balance
+    actualizarInventario(fill);
+}
+```
+
+### Las Ofertas (Offers)
+
+Otros jugadores pueden enviarte **ofertas** directas para comprar/vender productos.
+
+```java
+@Override
+public void onOffer(OfferMessage offer) {
+    // Alguien te ofrece comprar/vender
+    System.out.println("Oferta recibida: " + offer.getProduct());
+    System.out.println("Cantidad: " + offer.getQuantity());
+    System.out.println("Precio: $" + offer.getPrice());
+    
+    // Decides si aceptar o rechazar
+    if (esRentable(offer)) {
+        connector.aceptarOferta(offer.getOfferId());
+    } else {
+        connector.rechazarOferta(offer.getOfferId(), "Precio no conveniente");
+    }
+}
+```
+
+### Producción
+
+Puedes **producir** productos complejos combinando ingredientes básicos según **recetas**.
+
+**Ejemplo de Receta:**
+```
+AGUACATE_PREMIUM = 2x AGUACATE_BASICO + 1x FERTILIZANTE
+```
+
+```java
+// Verificar que tienes los ingredientes
+if (tieneIngredientes("AGUACATE_PREMIUM")) {
+    connector.producir("AGUACATE_PREMIUM", "premium");
+}
+```
+
+**Tipos de producción:**
+- `basico`: Usa energía normal
+- `premium`: Usa más energía pero produce productos de mayor calidad
+
+### El P&L (Profit & Loss)
+
+El **P&L** es tu ganancia o pérdida total. Se calcula como:
+
+```
+P&L = Balance Actual - Balance Inicial + Valor del Inventario
+```
+
+```java
+public double calcularPL() {
+    double balanceInicial = 1000000.0; // Ejemplo
+    double balanceActual = getBalance();
+    double valorInventario = 0.0;
+    
+    // Sumar valor de productos en inventario
+    for (Map.Entry<String, Integer> item : inventario.entrySet()) {
+        String producto = item.getKey();
+        int cantidad = item.getValue();
+        double precioMercado = obtenerPrecio(producto);
+        valorInventario += cantidad * precioMercado;
+    }
+    
+    return (balanceActual - balanceInicial) + valorInventario;
+}
+```
+
+---
+
+## 🔧 EL SDK: LO QUE TE DAMOS
+
+### ¿Qué es el SDK?
+
+El **SDK** (Software Development Kit) es una biblioteca que tu profesor te proporciona con las clases necesarias para conectarte al servidor de trading. Tú NO tienes que implementar la conexión WebSocket ni el protocolo de comunicación.
+
+**Dependencia en `build.gradle.kts`:**
+```kotlin
+dependencies {
+    implementation("tech.hellsoft.trading:websocket-client:1.0.0")
+}
+```
+
+### ⚡ Clase ConectorBolsa
+
+La clase principal que usarás para comunicarte con el servidor.
+
+```java
+import tech.hellsoft.trading.sdk.ConectorBolsa;
+
+ConectorBolsa connector = new ConectorBolsa();
+
+// Conectar al servidor
+connector.conectar("wss://trading.hellsoft.tech/ws", "TU_API_KEY");
+
+// Enviar orden
+connector.enviarOrden("PRODUCTO", cantidad, precio, "BUY");
+
+// Producir
+connector.producir("PRODUCTO", "basico");
+
+// Aceptar/rechazar oferta
+connector.aceptarOferta(offerId);
+connector.rechazarOferta(offerId, "motivo");
+
+// Resincronizar estado
+connector.resync();
+```
+
+### 🎯 Interface EventListener
+
+Debes implementar esta interfaz para recibir eventos del servidor.
+
+```java
+import tech.hellsoft.trading.sdk.EventListener;
+import tech.hellsoft.trading.sdk.messages.*;
+
+public class MiBot implements EventListener {
+    
+    @Override
+    public void onLoginOk(LoginOKMessage loginOk) {
+        // Conexión exitosa
+    }
+    
+    @Override
+    public void onTicker(TickerMessage ticker) {
+        // Actualización de precios
+    }
+    
+    @Override
+    public void onFill(FillMessage fill) {
+        // Orden ejecutada
+    }
+    
+    @Override
+    public void onBalanceUpdate(BalanceUpdateMessage balance) {
+        // Tu balance cambió
+    }
+    
+    @Override
+    public void onInventoryUpdate(InventoryUpdateMessage inventory) {
+        // Tu inventario cambió
+    }
+    
+    @Override
+    public void onOffer(OfferMessage offer) {
+        // Recibiste una oferta
+    }
+    
+    @Override
+    public void onOrderAck(OrderAckMessage ack) {
+        // Tu orden fue confirmada
+    }
+    
+    @Override
+    public void onError(ErrorMessage error) {
+        // Ocurrió un error
+    }
+    
+    @Override
+    public void onLogout(LogoutMessage logout) {
+        // Desconexión
+    }
+    
+    @Override
+    public void onRole(RoleMessage role) {
+        // Información de tu rol/especie
+    }
+    
+    @Override
+    public void onRecipe(RecipeMessage recipe) {
+        // Receta de producción
+    }
+}
+```
+
+### 🔄 Clase TareaAutomatica
+
+Permite ejecutar código periódicamente (como un cron job).
+
+```java
+import tech.hellsoft.trading.sdk.TareaAutomatica;
+
+// Ejecutar cada 5 segundos
+TareaAutomatica tarea = new TareaAutomatica(5000, () -> {
+    System.out.println("Revisando mercado...");
+    analizarOportunidades();
+});
+
+tarea.iniciar();
+
+// Cuando termines
+tarea.detener();
+```
+
+### 📦 DTOs (Data Transfer Objects)
+
+El SDK incluye clases para representar los mensajes del servidor:
+
+- `LoginOKMessage` - Confirmación de login
+- `TickerMessage` - Actualización de precios
+- `FillMessage` - Ejecución de orden
+- `BalanceUpdateMessage` - Actualización de balance
+- `InventoryUpdateMessage` - Actualización de inventario
+- `OfferMessage` - Oferta recibida
+- `OrderAckMessage` - Confirmación de orden
+- `ErrorMessage` - Error del servidor
+- `RoleMessage` - Información de rol/especie
+- `RecipeMessage` - Receta de producción
+
+---
+
+## 🚨 EXCEPCIONES QUE DEBES IMPLEMENTAR
+
+### Excepciones Requeridas
+
+Tu proyecto DEBE incluir al menos estas 7 excepciones personalizadas:
+
+#### 1. `SaldoInsuficienteException`
+```java
+public class SaldoInsuficienteException extends TradingException {
+    public SaldoInsuficienteException(double requerido, double disponible) {
+        super(String.format("Saldo insuficiente. Requerido: $%.2f, Disponible: $%.2f", 
+            requerido, disponible));
+    }
+}
+```
+
+#### 2. `InventarioInsuficienteException`
+```java
+public class InventarioInsuficienteException extends TradingException {
+    public InventarioInsuficienteException(String producto, int requerido, int disponible) {
+        super(String.format("Inventario insuficiente de %s. Requerido: %d, Disponible: %d", 
+            producto, requerido, disponible));
+    }
+}
+```
+
+#### 3. `ProductoNoAutorizadoException`
+```java
+public class ProductoNoAutorizadoException extends TradingException {
+    public ProductoNoAutorizadoException(String producto, String especie) {
+        super(String.format("La especie %s no puede producir %s", especie, producto));
+    }
+}
+```
+
+#### 4. `IngredientesInsuficientesException`
+```java
+public class IngredientesInsuficientesException extends TradingException {
+    public IngredientesInsuficientesException(String producto, String faltante) {
+        super(String.format("No puedes producir %s. Falta: %s", producto, faltante));
+    }
+}
+```
+
+#### 5. `RecetaNoEncontradaException`
+```java
+public class RecetaNoEncontradaException extends TradingException {
+    public RecetaNoEncontradaException(String producto) {
+        super("No existe receta para producir: " + producto);
+    }
+}
+```
+
+#### 6. `ConfiguracionInvalidaException`
+```java
+public class ConfiguracionInvalidaException extends TradingException {
+    public ConfiguracionInvalidaException(String campo) {
+        super("Configuración inválida: campo '" + campo + "' requerido");
+    }
+}
+```
+
+#### 7. `ConexionFallidaException`
+```java
+public class ConexionFallidaException extends TradingException {
+    public ConexionFallidaException(String motivo) {
+        super("No se pudo conectar al servidor: " + motivo);
+    }
+}
+```
+
+### Excepciones Opcionales (Bonus)
+
+Para obtener puntos extra, implementa:
+
+- `OrdenRechazadaException` - Cuando el servidor rechaza una orden
+- `PrecioInvalidoException` - Precio negativo o fuera de rango
+- `CantidadInvalidaException` - Cantidad negativa o cero
+- `TimeoutException` - Operación tardó demasiado
+- `EstadoInvalidoException` - El bot está en un estado inconsistente
+
+### Jerarquía Sugerida
+
+```
+java.lang.Exception
+    └── TradingException (abstracta)
+            ├── SaldoInsuficienteException
+            ├── InventarioInsuficienteException
+            ├── ProductoNoAutorizadoException
+            ├── IngredientesInsuficientesException
+            ├── RecetaNoEncontradaException
+            ├── ConfiguracionInvalidaException
+            └── ConexionFallidaException
+```
+
+### 🚀 Ejemplo de Uso del SDK
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        // 1. Cargar configuración
+        Configuration config = ConfigLoader.load("src/main/resources/config.json");
+        
+        // 2. Crear conector y bot
+        ConectorBolsa connector = new ConectorBolsa();
+        MiTradingBot bot = new MiTradingBot(connector);
+        connector.addListener(bot);
+        
+        // 3. Conectar
+        connector.conectar(config.host(), config.apiKey());
+        
+        // 4. Mantener programa corriendo
+        Thread.currentThread().join();
+    }
+}
+
+class MiTradingBot implements EventListener {
+    private final ConectorBolsa connector;
+    private double balance = 0;
+    private Map<String, Integer> inventario = new HashMap<>();
+    
+    public MiTradingBot(ConectorBolsa connector) {
+        this.connector = connector;
+    }
+    
+    @Override
+    public void onLoginOk(LoginOKMessage loginOk) {
+        if (loginOk == null) {
+            return;
+        }
+        balance = loginOk.getCurrentBalance();
+        System.out.println("Conectado! Balance: $" + balance);
+    }
+    
+    @Override
+    public void onTicker(TickerMessage ticker) {
+        if (ticker == null) {
+            return;
+        }
+        
+        // Estrategia simple: comprar si el precio es bajo
+        if (ticker.getMid() < 50.0 && balance > 100.0) {
+            connector.enviarOrden(ticker.getProduct(), 1, ticker.getBestAsk(), "BUY");
+        }
+    }
+    
+    @Override
+    public void onFill(FillMessage fill) {
+        if (fill == null) {
+            return;
+        }
+        System.out.println("Orden ejecutada: " + fill.getQuantity() + " unidades");
+        // Actualizar inventario local
+    }
+    
+    // ...otros métodos...
+}
+```
+
+---
+
+## 💻 LO QUE TÚ IMPLEMENTAS
+
+### 1⃣ ClienteBolsa — El Corazón (80-100 líneas)
+
+**Propósito:** Orquestar toda la lógica del bot
+
+**Responsabilidades:**
+- Implementar `EventListener`
+- Mantener referencia al `ConectorBolsa`
+- Delegar a otros componentes (EstadoCliente, CalculadoraProduccion, etc.)
+- Tomar decisiones de trading
+
+**Ejemplo básico:**
+```java
+public class ClienteBolsa implements EventListener {
+    private final ConectorBolsa connector;
+    private final EstadoCliente estado;
+    private final CalculadoraProduccion calculadora;
+    
+    public ClienteBolsa(ConectorBolsa connector) {
+        this.connector = connector;
+        this.estado = new EstadoCliente();
+        this.calculadora = new CalculadoraProduccion();
+    }
+    
+    @Override
+    public void onLoginOk(LoginOKMessage loginOk) {
+        // Inicializar estado
+    }
+    
+    @Override
+    public void onTicker(TickerMessage ticker) {
+        // Analizar oportunidades
+        // Decidir si comprar/vender
+    }
+    
+    @Override
+    public void onFill(FillMessage fill) {
+        // Actualizar estado
+    }
+    
+    // ...otros métodos del EventListener...
+}
+```
+
+### 2⃣ EstadoCliente — El Estado del Juego (100 líneas)
+
+**Propósito:** Mantener el estado completo del bot (Serializable para guardarlo)
+
+**Debe contener:**
+```java
+public class EstadoCliente implements Serializable {
+    private double balanceInicial;
+    private double balanceActual;
+    private Map<String, Integer> inventario;
+    private Map<String, Double> preciosActuales;
+    private List<String> ordenesActivas;
+    private LocalDateTime ultimaActualizacion;
+    
+    public double calcularPL() {
+        // Implementar cálculo de ganancia/pérdida
+    }
+    
+    public void actualizarBalance(double nuevoBalance) {
+        this.balanceActual = nuevoBalance;
+    }
+    
+    public void agregarInventario(String producto, int cantidad) {
+        inventario.merge(producto, cantidad, Integer::sum);
+    }
+    
 ###### ▪ exit
 
 ###### ▪ 8⃣ DTOs Propios (100 líneas)

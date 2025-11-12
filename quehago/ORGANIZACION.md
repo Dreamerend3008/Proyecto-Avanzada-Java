@@ -462,12 +462,12 @@ public class EstadoCliente {
 # Ver archivos en conflicto
 git status
 
-# Editar archivos, buscar marcadores:
-<<<<<<< HEAD
-tu código
-=======
-código del otro
->>>>>>> branch-name
+# Editar archivos, buscar marcadores de conflicto:
+# <<<<<<< HEAD
+# tu código
+# =======
+# código del otro
+# >>>>>>> branch-name
 
 # Resolver manualmente, luego:
 git add archivo-resuelto.java
