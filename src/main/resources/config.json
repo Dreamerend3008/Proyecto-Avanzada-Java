@@ -1,0 +1,5 @@
+{
+  "apiKey": "Your team key",
+  "team": "Your team name",
+  "host": "wss://trading.hellsoft.tech/ws"
+}
