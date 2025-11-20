@@ -2,13 +2,58 @@
 
 Cliente CLI para la Bolsa Interestelar de Aguacates Andorianos - Proyecto base para estudiantes.
 
-> **🆕 ¿Nuevo en el proyecto?** Comienza con **[documentacion/INDICE.md](documentacion/INDICE.md)** para ver todos los recursos disponibles.
+> **🆕 ¿Nuevo en el proyecto?** Comienza con **[Documentacion/README.md](Documentacion/README.md)** para ver el plan de trabajo completo.
 >
-> **📘 ¿Es tu primer día?** Ve directo a **[documentacion/TUTORIAL_PRIMER_DIA.md](documentacion/TUTORIAL_PRIMER_DIA.md)** - configuración paso a paso en 2-3 horas.
+> **📘 ¿Quieres entender el proyecto?** Lee **[Documentacion/00-RESUMEN_PROYECTO.md](Documentacion/00-RESUMEN_PROYECTO.md)** - visión general y arquitectura.
 >
-> **💡 ¿Necesitas ejemplos de código?** Consulta **[documentacion/DESARROLLO_EJEMPLOS.md](documentacion/DESARROLLO_EJEMPLOS.md)** con estrategias completas.
+> **👥 ¿Necesitas saber qué hacer?** Consulta tu documento asignado:
+> - **[01-TRABAJO_PERSONA_1.md](Documentacion/01-TRABAJO_PERSONA_1.md)** - Excepciones y DTOs (Carga Media)
+> - **[02-TRABAJO_PERSONA_2.md](Documentacion/02-TRABAJO_PERSONA_2.md)** - ClienteBolsa y Algoritmo Recursivo (Carga Alta)
+> - **[03-TRABAJO_PERSONA_3.md](Documentacion/03-TRABAJO_PERSONA_3.md)** - SnapshotManager y Testing (Carga Baja)
 >
-> **🎯 ¿Quieres entender el proyecto completo?** Lee **[GUIA.md](GUIA.md)** con conceptos de trading y explicación del SDK.
+> **🎯 ¿Quieres la guía del profesor?** Lee **[Guia-Profesor.md](Guia-Profesor.md)** con todos los requisitos detallados.
+
+---
+
+## 📚 Organización del Proyecto
+
+Este proyecto está organizado para un equipo de 3 personas con trabajo distribuido:
+
+### 📁 Carpeta `Documentacion/`
+Contiene toda la documentación del proyecto organizada por persona:
+
+- **README.md**: Índice principal con plan de trabajo y cronograma
+- **00-RESUMEN_PROYECTO.md**: Visión general, arquitectura y estado actual
+- **01-TRABAJO_PERSONA_1.md**: Tareas de carga media (12-15h) - Excepciones, DTOs, RecetaValidator
+- **02-TRABAJO_PERSONA_2.md**: Tareas de carga alta (18-22h) - Algoritmo recursivo, ClienteBolsa
+- **03-TRABAJO_PERSONA_3.md**: Tareas de carga baja (8-10h) - SnapshotManager, Testing
+
+### 🎯 Estado Actual del Proyecto
+
+**Ya implementado** ✅:
+- ✅ Configuration.java (record con validación)
+- ✅ ConfigLoader.java (carga config.json)
+- ✅ ConfiguracionInvalidaException.java
+- ✅ EstadoCliente.java (estructura básica)
+- ✅ Main.java (menú interactivo con TODOs)
+
+**Pendiente de implementar** ⚠️:
+- ⚠️ 6 Excepciones personalizadas adicionales
+- ⚠️ ClienteBolsa (corazón del sistema)
+- ⚠️ CalculadoraProduccion (algoritmo recursivo crítico)
+- ⚠️ RecetaValidator
+- ⚠️ SnapshotManager
+- ⚠️ DTOs (Rol, Receta)
+- ⚠️ Completar handlers de comandos en Main.java
+
+### 🚀 Por Dónde Empezar
+
+1. **Lee primero**: `Documentacion/README.md` y `Documentacion/00-RESUMEN_PROYECTO.md`
+2. **Identifica tu rol**: Persona 1, 2 o 3
+3. **Lee tu documento**: `01-TRABAJO_PERSONA_X.md` con instrucciones detalladas
+4. **Revisa la guía**: `Guia-Profesor.md` para entender los requisitos completos
+
+---
 
 ## 📋 Tabla de Contenidos
 
@@ -488,6 +533,13 @@ src/main/java/tech/hellsoft/trading/
 
 ```
 spacial-trading-bot-base/
+├── Documentacion/                   # 📚 Plan de trabajo y guías por persona
+│   ├── README.md                    # Índice principal y cronograma
+│   ├── 00-RESUMEN_PROYECTO.md      # Visión general y arquitectura
+│   ├── 01-TRABAJO_PERSONA_1.md     # Tareas Persona 1 (carga media)
+│   ├── 02-TRABAJO_PERSONA_2.md     # Tareas Persona 2 (carga alta)
+│   └── 03-TRABAJO_PERSONA_3.md     # Tareas Persona 3 (carga baja)
+│
 ├── config/                          # Herramientas de calidad de código
 │   ├── checkstyle/checkstyle.xml   # Reglas de estilo
 │   ├── pmd/ruleset.xml              # Análisis estático
@@ -495,10 +547,23 @@ spacial-trading-bot-base/
 │
 ├── gradle/wrapper/                  # Gradle wrapper (no tocar)
 │
+├── snapshots/                       # 💾 Carpeta para guardar estados (auto-creada)
+│
 ├── src/
 │   └── main/
-│       ├── java/                    # 👈 TU CÓDIGO AQUÍ (4 archivos base)
+│       ├── java/                    # 👈 TU CÓDIGO AQUÍ (5 archivos base)
+│       │   └── tech/hellsoft/trading/
+│       │       ├── Main.java
+│       │       ├── EstadoCliente.java
+│       │       ├── config/
+│       │       │   └── Configuration.java
+│       │       ├── exception/
+│       │       │   └── ConfiguracionInvalidaException.java
+│       │       └── util/
+│       │           └── ConfigLoader.java
+│       │
 │       └── resources/
+│           ├── config.json          # Tu configuración (no subir a Git)
 │           └── config.sample.json   # Plantilla de configuración
 │
 ├── build.gradle.kts                 # Dependencias y plugins
@@ -507,34 +572,45 @@ spacial-trading-bot-base/
 ├── .java-version                    # Java 25
 ├── .gitignore                       # Archivos a ignorar
 ├── AGENTS.md                        # 📖 Guía de diseño (léela!)
+├── Guia-Profesor.md                 # 📖 Guía completa del profesor
 └── README.md                        # Este archivo
 ```
 
 ### ¿Qué Archivos Crearás Tú?
 
-Según `AGENTS.md`, probablemente necesitarás crear:
+Según la distribución de trabajo en `Documentacion/`, el equipo implementará:
 
 ```
 src/main/java/tech/hellsoft/trading/
-├── model/
-│   ├── Role.java                    # Datos de tu rol (especies, energía, etc.)
-│   └── Recipe.java                  # Recetas de producción
+├── ClienteBolsa.java                # ⚠️ Persona 2 - Corazón del sistema
 │
-├── exception/                       # Tus excepciones de negocio (7 mínimo)
+├── model/
+│   ├── Rol.java                     # Persona 1 - Parámetros algoritmo recursivo
+│   └── Receta.java                  # Persona 1 - Recetas de producción
+│
+├── exception/                       # Persona 1 - 7 excepciones (15% nota)
+│   ├── TradingException.java        # Base abstracta
+│   ├── ProduccionException.java     # Base abstracta
+│   ├── ConfiguracionException.java  # Base abstracta
 │   ├── SaldoInsuficienteException.java
 │   ├── InventarioInsuficienteException.java
 │   ├── ProductoNoAutorizadoException.java
 │   ├── IngredientesInsuficientesException.java
 │   ├── RecetaNoEncontradaException.java
-│   └── ...                          # Y más según necesites
+│   └── SnapshotCorruptoException.java
 │
-└── strategy/                        # Tu lógica de trading
-    ├── TradingStrategy.java
-    ├── ProductionCalculator.java    # Algoritmo recursivo
-    └── InventoryManager.java
+└── util/
+    ├── CalculadoraProduccion.java   # ⚠️ Persona 2 - Algoritmo recursivo (CRÍTICO)
+    ├── RecetaValidator.java         # Persona 1 - Validación ingredientes
+    └── SnapshotManager.java         # Persona 3 - Serialización binaria
 ```
 
-**Principio clave**: Empieza simple, agrega complejidad solo cuando la necesites.
+**Distribución del trabajo**:
+- **Persona 1** (12-15h): Excepciones + DTOs + RecetaValidator
+- **Persona 2** (18-22h): ClienteBolsa + CalculadoraProduccion (crítico)
+- **Persona 3** (8-10h): SnapshotManager + Testing
+
+Ver detalles completos en `Documentacion/README.md`
 
 ### Archivos que NO deben subirse a Git
 
@@ -835,19 +911,25 @@ git push origin feature/mi-estrategia-trading
 
 ### Documentación del Proyecto
 
-- **[GUIA.md](GUIA.md)** - Guía completa del estudiante con conceptos de trading, explicación del SDK y lore del juego
+#### Documentación Principal
+- **[Guia-Profesor.md](Guia-Profesor.md)** - Guía completa del profesor con todos los requisitos, conceptos de trading y explicación del SDK
+
+#### Documentación de Organización del Trabajo (Carpeta `Documentacion/`)
+- **[Documentacion/README.md](Documentacion/README.md)** - Índice maestro con plan de trabajo y cronograma completo
+- **[Documentacion/00-RESUMEN_PROYECTO.md](Documentacion/00-RESUMEN_PROYECTO.md)** - Visión general del proyecto, arquitectura y estado actual
+- **[Documentacion/01-TRABAJO_PERSONA_1.md](Documentacion/01-TRABAJO_PERSONA_1.md)** - Tareas para Persona 1: Excepciones, DTOs, RecetaValidator (12-15h)
+- **[Documentacion/02-TRABAJO_PERSONA_2.md](Documentacion/02-TRABAJO_PERSONA_2.md)** - Tareas para Persona 2: ClienteBolsa, Algoritmo Recursivo (18-22h)
+- **[Documentacion/03-TRABAJO_PERSONA_3.md](Documentacion/03-TRABAJO_PERSONA_3.md)** - Tareas para Persona 3: SnapshotManager, Testing (8-10h)
+
+#### Principios de Diseño
 - **[AGENTS.md](AGENTS.md)** - Principios de diseño y patrones de código (regla "No Else", guard clauses, etc.)
-- **[documentacion/INDICE.md](documentacion/INDICE.md)** - Índice maestro de toda la documentación
-- **[documentacion/TUTORIAL_PRIMER_DIA.md](documentacion/TUTORIAL_PRIMER_DIA.md)** - Tutorial paso a paso para tu primer día (2-3 horas)
-- **[documentacion/INICIO_RAPIDO.md](documentacion/INICIO_RAPIDO.md)** - Inicio rápido en 5 minutos
-- **[documentacion/DESARROLLO_EJEMPLOS.md](documentacion/DESARROLLO_EJEMPLOS.md)** - Ejemplos completos de estrategias de trading
-- **[documentacion/RESUMEN_DOCUMENTACION.md](documentacion/RESUMEN_DOCUMENTACION.md)** - Resumen ejecutivo de la documentación
 
 ### Guías de Git y Configuración
 
 - **[GIT_CHECKLIST.md](GIT_CHECKLIST.md)** - Lista de archivos que deben/no deben estar en Git
-- **[SETUP_VERIFICATION.md](SETUP_VERIFICATION.md)** - Checklist de verificación post-clone
+- **[FILES_FOR_GIT.md](FILES_FOR_GIT.md)** - Archivos específicos para control de versiones
 - **[COMMIT_READY.md](COMMIT_READY.md)** - Verificación de seguridad antes de hacer commit
+- **[SETUP_VERIFICATION.md](SETUP_VERIFICATION.md)** - Checklist de verificación post-clone
 
 ### Recursos Externos
 
