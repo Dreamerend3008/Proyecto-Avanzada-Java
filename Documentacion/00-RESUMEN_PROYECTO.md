@@ -237,6 +237,6 @@ Ver los archivos de distribución de trabajo:
 ---
 
 **Equipo**: Avocasticos  
-**API Key**: TK-XqnoG2blE3DFmApa75iexwvC  
+**API Key**: 
 **Host**: wss://trading.hellsoft.tech/ws
 
