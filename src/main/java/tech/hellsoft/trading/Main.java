@@ -365,9 +365,14 @@ public final class Main {
     @Override
     public void onTicker(TickerMessage ticker) {
       // Guard clause
-      if (ticker == null) {
+      boolean testing = true; // cambiar hasta que queramos consultar precios e imprimirlos
+        if (ticker == null) {
         return;
       }
+        if(testing){
+            return;
+        }
+
 
       // Print market data
       System.out.println("📊 TICKER: " + ticker.getProduct() + " | Bid: $" + ticker.getBestBid() + " | Ask: $"
