@@ -1,5 +1,5 @@
 # 👤 PERSONA 1
-
+**Estatus**: Ya logro compilarlo
 **Responsabilidad**: Sistema de Excepciones, Validación de Recetas y Comandos de Consola  
 **Complejidad**: Media  
 **Tiempo estimado**: 12-15 horas  
