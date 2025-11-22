@@ -1,11 +1,10 @@
 # 👤 PERSONA 1
 
-**Estatus**: Ya logro ejecutar el proyecto
-
 **Responsabilidad**: Sistema de Excepciones, Validación de Recetas y Comandos de Consola  
 **Complejidad**: Media  
 **Tiempo estimado**: 12-15 horas  
 **Peso en la evaluación**: ~25% del proyecto
+
 ---
 
 ## 📋 Resumen de Tareas
