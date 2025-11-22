@@ -7,17 +7,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import lombok.Getter;
+import tech.hellsoft.trading.dto.server.OfferMessage;
+import tech.hellsoft.trading.dto.server.Recipe;
+import tech.hellsoft.trading.enums.Product;
 
 public class EstadoCliente implements Serializable {
     private static final long serialVersionUID = 1L;
     // variables de uso
+    @Getter
     private double saldo;
     private double saldoInicial;
-    private Map<String, Integer> inventario;
-    private Map<String, Double> preciosActuales;
-    //private Map<String, Recipe> recetas; // Mapa de recetas por nombre
-    //private Role rol; // Rol del cliente
-    private List<String> productosAutorizados;
+    private Map<Product, Integer> inventario;
+    private Map<Product, Double> preciosActuales;
+    private Map<Product, Recipe> recetas; // Mapa de recetas por nombre
+    private Map<String, OfferMessage> ofertasPendientes;
+    private Role rol; // Rol del cliente
+    private List<Product> productosAutorizados;
     private String nombreEquipo;
     private long timestampSnapshot;
 
@@ -34,8 +40,8 @@ public class EstadoCliente implements Serializable {
     }
     public double calcularPL(){
         double valorInventario = 0.0;
-        for (Map.Entry<String, Integer> entry : inventario.entrySet()) {
-            String producto = entry.getKey();
+        for (Map.Entry<Product, Integer> entry : inventario.entrySet()) {
+            Product producto = entry.getKey();
             int cantidad = entry.getValue();
 
             // Obtener precio actual (si no hay precio, asumir 0)
@@ -53,8 +59,8 @@ public class EstadoCliente implements Serializable {
     }
     public double calcularValorInventario(){
         double valorInventario = 0.0;
-        for (Map.Entry<String, Integer> entry : inventario.entrySet()) {
-            String producto = entry.getKey();
+        for (Map.Entry<Product, Integer> entry : inventario.entrySet()) {
+            Product producto = entry.getKey();
             int cantidad = entry.getValue();
 
             // Obtener precio actual (si no hay precio, asumir 0)
@@ -66,51 +72,83 @@ public class EstadoCliente implements Serializable {
         return valorInventario;
     }
 
-    public double getSaldo() {
-        return saldo;
-    }
-    public void setSaldo(double saldo) {
-        this.saldo = saldo;
-    }
-    public double getSaldoInicial() {
-        return saldoInicial;
-    }
-    public void setSaldoInicial(double saldoInicial) {
-        this.saldoInicial = saldoInicial;
-    }
-    public Map<String, Integer> getInventario() {
-        return inventario;
-    }
-    public void setInventario(Map<String, Integer> inventario) {
-        this.inventario = inventario;
-    }
-    public Map<String, Double> getPreciosActuales() {
-        return preciosActuales;
-    }
-    public void setPreciosActuales(Map<String, Double> preciosActuales) {
-        this.preciosActuales = preciosActuales;
-    }
-    public List<String> getProductosAutorizados() {
-        return productosAutorizados;
-    }
-    public void setProductosAutorizados(List<String> productosAutorizados) {
-        this.productosAutorizados = productosAutorizados;
-    }
-    public String getNombreEquipo() {
-        return nombreEquipo;
-    }
-    public void setNombreEquipo(String nombreEquipo) {
-        this.nombreEquipo = nombreEquipo;
-    }
     public long getTimestampSnapshot() {
         return timestampSnapshot;
     }
+
     public void setTimestampSnapshot(long timestampSnapshot) {
         this.timestampSnapshot = timestampSnapshot;
     }
-    public void actualizarPrecio(String producto, Double precio) {
-        if (precio != null) {
-            preciosActuales.put(producto, precio);
-        }
+
+    public String getNombreEquipo() {
+        return nombreEquipo;
+    }
+
+    public void setNombreEquipo(String nombreEquipo) {
+        this.nombreEquipo = nombreEquipo;
+    }
+
+    public List<Product> getProductosAutorizados() {
+        return productosAutorizados;
+    }
+
+    public void setProductosAutorizados(List<Product> productosAutorizados) {
+        this.productosAutorizados = productosAutorizados;
+    }
+
+    public Role getRol() {
+        return rol;
+    }
+
+    public void setRol(Role rol) {
+        this.rol = rol;
+    }
+
+    public Map<Product, Recipe> getRecetas() {
+        return recetas;
+    }
+
+    public void setRecetas(Map<Product, Recipe> recetas) {
+        this.recetas = recetas;
+    }
+
+    public Map<Product, Double> getPreciosActuales() {
+        return preciosActuales;
+    }
+
+    public void setPreciosActuales(Map<Product, Double> preciosActuales) {
+        this.preciosActuales = preciosActuales;
+    }
+
+    public Map<Product, Integer> getInventario() {
+        return inventario;
+    }
+
+    public void setInventario(Map<Product, Integer> inventario) {
+        this.inventario = inventario;
+    }
+
+    public double getSaldoInicial() {
+        return saldoInicial;
+    }
+
+    public void setSaldoInicial(double saldoInicial) {
+        this.saldoInicial = saldoInicial;
+    }
+
+    public void setSaldo(double saldo) {
+        this.saldo = saldo;
+    }
+
+    public Map<String, OfferMessage> getOfertasPendientes() {
+        return ofertasPendientes;
+    }
+
+    public void setOfertasPendientes(Map<String, OfferMessage> ofertasPendientes) {
+        this.ofertasPendientes = ofertasPendientes;
+    }
+
+    public double getSaldo() {
+        return saldo;
     }
 }
