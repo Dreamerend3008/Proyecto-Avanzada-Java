@@ -22,7 +22,7 @@ public class EstadoCliente implements Serializable {
     private Map<Product, Double> preciosActuales;
     private Map<Product, Recipe> recetas; // Mapa de recetas por nombre
     private Map<String, OfferMessage> ofertasPendientes;
-    private Role rol; // Rol del cliente
+    private Rol rol; // Rol del cliente
     private List<Product> productosAutorizados;
     private String nombreEquipo;
     private long timestampSnapshot;
@@ -96,7 +96,7 @@ public class EstadoCliente implements Serializable {
         this.productosAutorizados = productosAutorizados;
     }
 
-    public Role getRol() {
+    public Rol getRol() {
         return rol;
     }
 

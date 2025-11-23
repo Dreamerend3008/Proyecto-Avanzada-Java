@@ -6,7 +6,7 @@ import tech.hellsoft.trading.dto.server.LoginOKMessage;
 import tech.hellsoft.trading.dto.server.OfferMessage;
 import tech.hellsoft.trading.dto.server.TickerMessage;
 
-public interface EventListenerV2 {
+public interface EventListenerTest {
     public void onLoginOk(LoginOKMessage msg);
     public void onFill(FillMessage fill);
     public void onTicker(TickerMessage ticker);

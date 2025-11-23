@@ -1,24 +1,22 @@
 package tech.hellsoft.trading;
 
-import java.util.EventListener;
 import tech.hellsoft.trading.dto.client.AcceptOfferMessage;
+import tech.hellsoft.trading.dto.client.ProductionUpdateMessage;
 import tech.hellsoft.trading.dto.server.*;
 import tech.hellsoft.trading.dto.client.OrderMessage;
 import tech.hellsoft.trading.enums.MessageType;
 import tech.hellsoft.trading.enums.OrderMode;
 import tech.hellsoft.trading.enums.OrderSide;
 import tech.hellsoft.trading.enums.Product;
-import tech.hellsoft.trading.exception.*;
 import tech.hellsoft.trading.model.Receta;
 import tech.hellsoft.trading.model.Rol;
-import tech.hellsoft.trading.services.EventListenerV2;
 import tech.hellsoft.trading.util.CalculadoraProduccion;
 import tech.hellsoft.trading.util.RecetaValidator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // tampoco va a compilar hasta que daiana haga su parte
-public class ClienteBolsa implements EventListenerV2 {
+public class ClienteBolsa implements EventListener {
     private final ConectorBolsa conector;
     private final EstadoCliente estado;
     private final AtomicInteger orderIdCounter;
@@ -152,7 +150,32 @@ public class ClienteBolsa implements EventListenerV2 {
     }
 
     @Override
-    public void onConnectionLost(Exception e) {
+    public void onOrderAck(OrderAckMessage orderAckMessage) {
+
+    }
+
+    @Override
+    public void onInventoryUpdate(InventoryUpdateMessage inventoryUpdateMessage) {
+
+    }
+
+    @Override
+    public void onBalanceUpdate(BalanceUpdateMessage balanceUpdateMessage) {
+
+    }
+
+    @Override
+    public void onEventDelta(EventDeltaMessage eventDeltaMessage) {
+
+    }
+
+    @Override
+    public void onBroadcast(BroadcastNotificationMessage broadcastNotificationMessage) {
+
+    }
+
+    @Override
+    public void onConnectionLost(Throwable throwable) {
         System.err.println("\n⚠️ CONEXIÓN PERDIDA");
         System.err.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.err.println("Razón: " + e.getMessage());
@@ -168,7 +191,7 @@ public class ClienteBolsa implements EventListenerV2 {
 
     // metodos NUESTROS MUAJAJAJAJ
 
-    public void comprar(Product producto, int cantidad, String TipoDeOrder, String mensaje) throws SaldoInsuficienteException {
+    public void comprar(Product producto, int cantidad, String mensaje) throws SaldoInsuficienteException {
         if (cantidad <= 0) {
             throw new IllegalArgumentException("Las cantidades no pueden ser <= 0");
         }
@@ -190,6 +213,7 @@ public class ClienteBolsa implements EventListenerV2 {
         String orderId = "ORD-" + orderIdCounter.getAndIncrement();
         OrderMode orderMode = OrderMode.MARKET;
         Double limitPrice = 100000000.0;
+        String TipoDeOrder = mensaje;
         if(TipoDeOrder.equalsIgnoreCase("LIMIT")){
             orderMode = OrderMode.LIMIT;
             // todavia revisar como poner el precio en limit
@@ -223,6 +247,7 @@ public class ClienteBolsa implements EventListenerV2 {
         String orderId = "ORD-" + orderIdCounter.getAndIncrement();
         OrderMode orderMode = OrderMode.MARKET;
         // falta implementar limit sell para hacer ordenes mas seguras
+        // por ahora no se si mande ordenes xd
         OrderMessage orden = OrderMessage.builder()
                 .clOrdID(orderId)
                 .side(OrderSide.SELL)
@@ -237,7 +262,43 @@ public class ClienteBolsa implements EventListenerV2 {
     }
 
     public void producir(Product producto, boolean premium) throws ProductoNoAutorizadoException, RecetaNoEncontradaException, IngredientesInsuficientesException{
-        // REVISAR ESTO
+        // validar si el producto es autorizado
+        if(!estado.getProductosAutorizados().contains(producto)){
+            throw mew ProductoNoAutorizadoException(producto, estado.getProductosAutorizados());
+        }
+
+        // obtener la receta
+        Receta receta = estado.getRecetas().get(producto);
+        if(receta == null) {
+            throw new RecetaNoEncontradaException(producto);
+        }
+
+        if(premium){
+            if(!RecetaValidator.puedeProducir(receta, estado.getInventario())){
+                throw new IngredientesInsuficientesException(
+                        receta.getIngredientes(),
+                        estado.getInventario()
+                );
+                return;
+            }
+            RecetaValidator.consumirIngredientes(receta, estado.getInventario());
+            System.out.println("Ingredientes consumidos: " + receta.getIngredientes());
+        }
+
+        int cantidad = CalculadoraProduccion.calcularUnidades(estado.getRol());
+
+        // aplicar bonnus de premium
+        if (premium && receta.isPremium()) {
+            cantidad = CalculadoraProduccion.aplicarBonusPremium(unidadesBase, receta.getBonusPremium()
+        }
+
+        // enviar al servidor produccion basica
+        ProductionUpdateMessage p = new ProductionUpdateMessage(MessageType.PRODUCTION_UPDATE, producto, cantidad);
+        conector.enviarActualizacionProduccion(p);
+
+        int cantidadActual = estado.getInventario().getOrDefault(producto, 0);
+        estado.getInventario().put(producto, cantidadActual + cantidad);
+        System.out.println("✅ Producción realizada: " + cantidad + " unidades de " + producto);
     }
 
     public void aceptarOferta(String offerId){

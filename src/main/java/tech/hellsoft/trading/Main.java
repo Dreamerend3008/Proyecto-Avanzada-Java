@@ -2,6 +2,7 @@ package tech.hellsoft.trading;
 
 import java.util.Scanner;
 import tech.hellsoft.trading.config.Configuration;
+import tech.hellsoft.trading.enums.Product;
 import tech.hellsoft.trading.util.ConfigLoader;
 import tech.hellsoft.trading.dto.server.LoginOKMessage;
 import tech.hellsoft.trading.dto.server.ErrorMessage;
@@ -37,8 +38,8 @@ public final class Main {
 
       // 2. Create connector and event listener
       ConectorBolsa connector = new ConectorBolsa();
-      MyTradingBot bot = new MyTradingBot();
-      connector.addListener(bot);
+      ClienteBolsa cliente = new ClienteBolsa();
+      connector.addListener(cliente);
 
       // 3. Connect to server
       System.out.println("🔌 Connecting to: " + config.host());
@@ -161,9 +162,6 @@ public final class Main {
     }
   }
 
-  // ==================== COMMAND HANDLERS ====================
-  // TODO: Students should implement these methods
-
   private static void handleStatus(MyTradingBot bot) {
     System.out.println("\n📊 ESTADO ACTUAL");
     System.out.println("━━━━━━━━━━━━━━━━━━━━━");
@@ -198,70 +196,81 @@ public final class Main {
     System.out.println("      - Mostrar bid, ask, mid de cada producto");
   }
 
-  private static void handleComprar(String[] parts, ConectorBolsa connector, MyTradingBot bot) {
-    if (parts.length < 3) {
-      System.out.println("❌ Uso: comprar <producto> <cantidad> [mensaje]");
-      return;
-    }
+  private static void handleComprar(String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
+      if (parts.length < 3) {
+          System.out.println("❌ Uso: comprar <producto> <cantidad> [mensaje]");
+          return;
+      }
 
-    String producto = parts[1];
-    int cantidad = Integer.parseInt(parts[2]);
-    String mensaje = parts.length > 3
-        ? String.join(" ", java.util.Arrays.copyOfRange(parts, 3, parts.length))
-        : "Orden de compra";
+      try {
+          Product producto = Product.valueOf(parts[1]);
+          int cantidad = Integer.parseInt(parts[2]);
 
-    System.out.println("\n📤 Enviando orden de compra:");
-    System.out.println("   Producto: " + producto);
-    System.out.println("   Cantidad: " + cantidad);
-    System.out.println("   Mensaje: " + mensaje);
-    System.out.println();
-    System.out.println("TODO: Implementar lógica de compra");
-    System.out.println("      1. Validar saldo suficiente");
-    System.out.println("      2. Crear objeto Orden");
-    System.out.println("      3. Llamar connector.enviarOrden()");
+          // puede ser MARKET o LIMIT
+          String mensaje = parts.length > 3
+                  ? String.join(" ", java.util.Arrays.copyOfRange(parts, 3, parts.length))
+                  : "MARKET";
+          cliente.comprar(producto, cantidad, mensaje);
+
+      } catch (NumberFormatException e) {
+          System.out.println("❌ Cantidad inválida");
+      } catch (SaldoInsuficienteException e) {
+          System.out.printf("❌ Saldo insuficiente. Tienes: $%.2f, Necesitas: $%.2f%n",
+                  e.getSaldoActual(), e.getCostoRequerido());
+      } catch (Exception e) {
+          System.out.println("❌ Error: " + e.getMessage());
+      }
   }
 
-  private static void handleVender(String[] parts, ConectorBolsa connector, MyTradingBot bot) {
-    if (parts.length < 3) {
-      System.out.println("❌ Uso: vender <producto> <cantidad> [mensaje]");
-      return;
-    }
+  private static void handleVender(String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
+      if (parts.length < 3) {
+          System.out.println("❌ Uso: vender <producto> <cantidad> [mensaje]");
+          return;
+      }
 
-    String producto = parts[1];
-    int cantidad = Integer.parseInt(parts[2]);
-    String mensaje = parts.length > 3
-        ? String.join(" ", java.util.Arrays.copyOfRange(parts, 3, parts.length))
-        : "Orden de venta";
+      try {
+          Product producto = Product.valueOf(parts[1]);
+          int cantidad = Integer.parseInt(parts[2]);
 
-    System.out.println("\n📤 Enviando orden de venta:");
-    System.out.println("   Producto: " + producto);
-    System.out.println("   Cantidad: " + cantidad);
-    System.out.println("   Mensaje: " + mensaje);
-    System.out.println();
-    System.out.println("TODO: Implementar lógica de venta");
-    System.out.println("      1. Validar inventario suficiente");
-    System.out.println("      2. Crear objeto Orden");
-    System.out.println("      3. Llamar connector.enviarOrden()");
+          // revisar esto porque debe ser cooherente con el marketlimit etc
+          String mensaje = parts.length > 3
+                  ? String.join(" ", java.util.Arrays.copyOfRange(parts, 3, parts.length))
+                  : "";
+
+          cliente.vender(producto, cantidad, mensaje); // por ahora no se porque estoy mandando un mensaje a vender
+
+      } catch (NumberFormatException e) {
+          System.out.println("❌ Cantidad inválida");
+      } catch (InventarioInsuficienteException e) {
+          System.out.printf("❌ Inventario insuficiente de %s. Tienes: %d, Necesitas: %d%n",
+                  e.getProducto(), e.getDisponible(), e.getRequerido());
+      } catch (Exception e) {
+          System.out.println("❌ Error: " + e.getMessage());
+      }
   }
 
-  private static void handleProducir(String[] parts, ConectorBolsa connector, MyTradingBot bot) {
-    if (parts.length < 3) {
-      System.out.println("❌ Uso: producir <producto> <basico|premium>");
-      return;
-    }
+  private static void handleProducir(String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
+      if (parts.length < 3) {
+          System.out.println("❌ Uso: producir <producto> <basico|premium>");
+          return;
+      }
 
-    String producto = parts[1];
-    String tipo = parts[2].toLowerCase();
-    boolean premium = tipo.equals("premium");
+      try {
+          Product producto = Product.valueOf(parts[1]);
+          String tipo = parts[2].toLowerCase();
+          boolean premium = tipo.equals("premium");
 
-    System.out.println("\n🏭 Produciendo " + producto + " (" + tipo + "):");
-    System.out.println();
-    System.out.println("TODO: Implementar lógica de producción");
-    System.out.println("      1. Validar producto autorizado");
-    System.out.println("      2. Si premium: validar ingredientes");
-    System.out.println("      3. Calcular unidades (algoritmo recursivo)");
-    System.out.println("      4. Actualizar inventario");
-    System.out.println("      5. Llamar connector.enviarProduccion()");
+          cliente.producir(producto, premium);
+
+      } catch (ProductoNoAutorizadoException e) {
+          System.out.println("❌ " + e.getMessage());
+      } catch (RecetaNoEncontradaException e) {
+          System.out.println("❌ " + e.getMessage());
+      } catch (IngredientesInsuficientesException e) {
+          System.out.println("❌ " + e.getMessage());
+      } catch (Exception e) {
+          System.out.println("❌ Error: " + e.getMessage());
+      }
   }
 
   private static void handleOfertas(MyTradingBot bot) {
@@ -319,13 +328,6 @@ public final class Main {
     System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   }
 
-  /**
-   * Your trading bot implementation.
-   *
-   * TODO for students: - Add your trading logic in each callback method - Store
-   * state (inventory, balance, prices, etc.) - Implement buy/sell strategies -
-   * Handle production logic
-   */
   private static class MyTradingBot implements EventListener {
 
     @Override
