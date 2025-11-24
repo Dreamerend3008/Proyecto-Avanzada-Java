@@ -5,8 +5,6 @@
 **Tiempo estimado**: 12-15 horas  
 **Peso en la evaluación**: ~25% del proyecto
 
----
-
 ## 📋 Resumen de Tareas
 
 Esta persona se encarga de:
@@ -15,236 +13,12 @@ Esta persona se encarga de:
 3. Implementar los DTOs básicos (Rol y Receta)
 4. Completar algunos comandos de la consola en Main.java
 
----
-
 ## 🚨 TAREA 1: Excepciones Personalizadas (15% de la nota)
 
 ### Ubicación
 `src/main/java/tech/hellsoft/trading/exception/`
-
-### 1.1 Crear Jerarquía de Excepciones Base
-
-#### TradingException.java
-```java
-package tech.hellsoft.trading.exception;
-
-/**
- * Excepción base para errores de trading.
- */
-public abstract class TradingException extends Exception {
-    
-    public TradingException(String mensaje) {
-        super(mensaje);
-    }
-    
-    public TradingException(String mensaje, Throwable causa) {
-        super(mensaje, causa);
-    }
-}
-```
-
-#### ProduccionException.java
-```java
-package tech.hellsoft.trading.exception;
-
-/**
- * Excepción base para errores de producción.
- */
-public abstract class ProduccionException extends Exception {
-    
-    public ProduccionException(String mensaje) {
-        super(mensaje);
-    }
-    
-    public ProduccionException(String mensaje, Throwable causa) {
-        super(mensaje, causa);
-    }
-}
-```
-
-#### ConfiguracionException.java
-```java
-package tech.hellsoft.trading.exception;
-
-/**
- * Excepción base para errores de configuración.
- */
-public abstract class ConfiguracionException extends Exception {
-    
-    public ConfiguracionException(String mensaje) {
-        super(mensaje);
-    }
-    
-    public ConfiguracionException(String mensaje, Throwable causa) {
-        super(mensaje, causa);
-    }
-}
-```
-
 ### 1.2 Implementar Excepciones Específicas
 
-#### SaldoInsuficienteException.java
-```java
-package tech.hellsoft.trading.exception;
-
-/**
- * Se lanza cuando no hay suficiente saldo para realizar una compra.
- */
-public class SaldoInsuficienteException extends TradingException {
-    
-    private final double saldoActual;
-    private final double costoRequerido;
-    
-    public SaldoInsuficienteException(double saldoActual, double costoRequerido) {
-        super(String.format("Saldo insuficiente. Tienes: $%.2f, Necesitas: $%.2f", 
-              saldoActual, costoRequerido));
-        this.saldoActual = saldoActual;
-        this.costoRequerido = costoRequerido;
-    }
-    
-    public double getSaldoActual() {
-        return saldoActual;
-    }
-    
-    public double getCostoRequerido() {
-        return costoRequerido;
-    }
-}
-```
-
-#### InventarioInsuficienteException.java
-```java
-package tech.hellsoft.trading.exception;
-
-/**
- * Se lanza cuando no hay suficiente cantidad de un producto en inventario.
- */
-public class InventarioInsuficienteException extends TradingException {
-    
-    private final String producto;
-    private final int disponible;
-    private final int requerido;
-    
-    public InventarioInsuficienteException(String producto, int disponible, int requerido) {
-        super(String.format("Inventario insuficiente de %s. Tienes: %d, Necesitas: %d", 
-              producto, disponible, requerido));
-        this.producto = producto;
-        this.disponible = disponible;
-        this.requerido = requerido;
-    }
-    
-    public String getProducto() {
-        return producto;
-    }
-    
-    public int getDisponible() {
-        return disponible;
-    }
-    
-    public int getRequerido() {
-        return requerido;
-    }
-}
-```
-
-#### ProductoNoAutorizadoException.java
-```java
-package tech.hellsoft.trading.exception;
-
-import java.util.List;
-
-/**
- * Se lanza cuando se intenta producir un producto no autorizado.
- */
-public class ProductoNoAutorizadoException extends ProduccionException {
-    
-    private final String producto;
-    private final List<String> productosPermitidos;
-    
-    public ProductoNoAutorizadoException(String producto, List<String> productosPermitidos) {
-        super(String.format("No puedes producir %s. Productos permitidos: %s", 
-              producto, String.join(", ", productosPermitidos)));
-        this.producto = producto;
-        this.productosPermitidos = productosPermitidos;
-    }
-    
-    public String getProducto() {
-        return producto;
-    }
-    
-    public List<String> getProductosPermitidos() {
-        return productosPermitidos;
-    }
-}
-```
-
-#### IngredientesInsuficientesException.java
-```java
-package tech.hellsoft.trading.exception;
-
-import java.util.Map;
-
-/**
- * Se lanza cuando faltan ingredientes para producción premium.
- */
-public class IngredientesInsuficientesException extends ProduccionException {
-    
-    private final Map<String, Integer> ingredientesRequeridos;
-    private final Map<String, Integer> ingredientesDisponibles;
-    
-    public IngredientesInsuficientesException(
-            Map<String, Integer> requeridos, 
-            Map<String, Integer> disponibles) {
-        super(construirMensaje(requeridos, disponibles));
-        this.ingredientesRequeridos = requeridos;
-        this.ingredientesDisponibles = disponibles;
-    }
-    
-    private static String construirMensaje(
-            Map<String, Integer> requeridos, 
-            Map<String, Integer> disponibles) {
-        StringBuilder sb = new StringBuilder("Ingredientes insuficientes:\n");
-        for (Map.Entry<String, Integer> entry : requeridos.entrySet()) {
-            String ingrediente = entry.getKey();
-            int req = entry.getValue();
-            int disp = disponibles.getOrDefault(ingrediente, 0);
-            sb.append(String.format("  - %s: Tienes %d, Necesitas %d\n", 
-                      ingrediente, disp, req));
-        }
-        return sb.toString();
-    }
-    
-    public Map<String, Integer> getIngredientesRequeridos() {
-        return ingredientesRequeridos;
-    }
-    
-    public Map<String, Integer> getIngredientesDisponibles() {
-        return ingredientesDisponibles;
-    }
-}
-```
-
-#### RecetaNoEncontradaException.java
-```java
-package tech.hellsoft.trading.exception;
-
-/**
- * Se lanza cuando una receta no existe en el catálogo.
- */
-public class RecetaNoEncontradaException extends ProduccionException {
-    
-    private final String producto;
-    
-    public RecetaNoEncontradaException(String producto) {
-        super(String.format("No existe receta para el producto: %s", producto));
-        this.producto = producto;
-    }
-    
-    public String getProducto() {
-        return producto;
-    }
-}
-```
 
 #### SnapshotCorruptoException.java
 ```java
@@ -664,4 +438,223 @@ System.out.println("Puede producir básico: " + puede); // Debe ser true
 **Estimación total**: 12-15 horas  
 **Prioridad**: Alta (otras personas dependen de este trabajo)  
 **Dificultad**: Media
+
+
+### 1.1 Crear Jerarquía de Excepciones Base
+
+#### TradingException.java
+```java
+package tech.hellsoft.trading.exception;
+
+/**
+ * Excepción base para errores de trading.
+ */
+public abstract class TradingException extends Exception {
+    
+    public TradingException(String mensaje) {
+        super(mensaje);
+    }
+    
+    public TradingException(String mensaje, Throwable causa) {
+        super(mensaje, causa);
+    }
+}
+```
+
+#### ProduccionException.java
+```java
+package tech.hellsoft.trading.exception;
+
+/**
+ * Excepción base para errores de producción.
+ */
+public abstract class ProduccionException extends Exception {
+    
+    public ProduccionException(String mensaje) {
+        super(mensaje);
+    }
+    
+    public ProduccionException(String mensaje, Throwable causa) {
+        super(mensaje, causa);
+    }
+}
+```
+
+#### ConfiguracionException.java
+```java
+package tech.hellsoft.trading.exception;
+
+/**
+ * Excepción base para errores de configuración.
+ */
+public abstract class ConfiguracionException extends Exception {
+    
+    public ConfiguracionException(String mensaje) {
+        super(mensaje);
+    }
+    
+    public ConfiguracionException(String mensaje, Throwable causa) {
+        super(mensaje, causa);
+    }
+}
+```
+#### SaldoInsuficienteException.java
+```java
+package tech.hellsoft.trading.exception;
+public class SaldoInsuficienteException extends TradingException {
+    
+    private final double saldoActual;
+    private final double costoRequerido;
+    
+    public SaldoInsuficienteException(double saldoActual, double costoRequerido) {
+        super(String.format("Saldo insuficiente. Tienes: $%.2f, Necesitas: $%.2f", 
+              saldoActual, costoRequerido));
+        this.saldoActual = saldoActual;
+        this.costoRequerido = costoRequerido;
+    }
+    
+    public double getSaldoActual() {
+        return saldoActual;
+    }
+    
+    public double getCostoRequerido() {
+        return costoRequerido;
+    }
+}
+```
+
+#### InventarioInsuficienteException.java
+```java
+package tech.hellsoft.trading.exception;
+
+/**
+ * Se lanza cuando no hay suficiente cantidad de un producto en inventario.
+ */
+public class InventarioInsuficienteException extends TradingException {
+    
+    private final String producto;
+    private final int disponible;
+    private final int requerido;
+    
+    public InventarioInsuficienteException(String producto, int disponible, int requerido) {
+        super(String.format("Inventario insuficiente de %s. Tienes: %d, Necesitas: %d", 
+              producto, disponible, requerido));
+        this.producto = producto;
+        this.disponible = disponible;
+        this.requerido = requerido;
+    }
+    
+    public String getProducto() {
+        return producto;
+    }
+    
+    public int getDisponible() {
+        return disponible;
+    }
+    
+    public int getRequerido() {
+        return requerido;
+    }
+}
+```
+
+
+#### ProductoNoAutorizadoException.java
+```java
+package tech.hellsoft.trading.exception;
+
+import java.util.List;
+
+/**
+ * Se lanza cuando se intenta producir un producto no autorizado.
+ */
+public class ProductoNoAutorizadoException extends ProduccionException {
+    
+    private final String producto;
+    private final List<String> productosPermitidos;
+    
+    public ProductoNoAutorizadoException(String producto, List<String> productosPermitidos) {
+        super(String.format("No puedes producir %s. Productos permitidos: %s", 
+              producto, String.join(", ", productosPermitidos)));
+        this.producto = producto;
+        this.productosPermitidos = productosPermitidos;
+    }
+    
+    public String getProducto() {
+        return producto;
+    }
+    
+    public List<String> getProductosPermitidos() {
+        return productosPermitidos;
+    }
+}
+```
+
+#### IngredientesInsuficientesException.java
+```java
+package tech.hellsoft.trading.exception;
+
+import java.util.Map;
+
+/**
+ * Se lanza cuando faltan ingredientes para producción premium.
+ */
+public class IngredientesInsuficientesException extends ProduccionException {
+    
+    private final Map<String, Integer> ingredientesRequeridos;
+    private final Map<String, Integer> ingredientesDisponibles;
+    
+    public IngredientesInsuficientesException(
+            Map<String, Integer> requeridos, 
+            Map<String, Integer> disponibles) {
+        super(construirMensaje(requeridos, disponibles));
+        this.ingredientesRequeridos = requeridos;
+        this.ingredientesDisponibles = disponibles;
+    }
+    
+    private static String construirMensaje(
+            Map<String, Integer> requeridos, 
+            Map<String, Integer> disponibles) {
+        StringBuilder sb = new StringBuilder("Ingredientes insuficientes:\n");
+        for (Map.Entry<String, Integer> entry : requeridos.entrySet()) {
+            String ingrediente = entry.getKey();
+            int req = entry.getValue();
+            int disp = disponibles.getOrDefault(ingrediente, 0);
+            sb.append(String.format("  - %s: Tienes %d, Necesitas %d\n", 
+                      ingrediente, disp, req));
+        }
+        return sb.toString();
+    }
+    
+    public Map<String, Integer> getIngredientesRequeridos() {
+        return ingredientesRequeridos;
+    }
+    
+    public Map<String, Integer> getIngredientesDisponibles() {
+        return ingredientesDisponibles;
+    }
+}
+```
+
+#### RecetaNoEncontradaException.java
+```java
+package tech.hellsoft.trading.exception;
+
+/**
+ * Se lanza cuando una receta no existe en el catálogo.
+ */
+public class RecetaNoEncontradaException extends ProduccionException {
+    
+    private final String producto;
+    
+    public RecetaNoEncontradaException(String producto) {
+        super(String.format("No existe receta para el producto: %s", producto));
+        this.producto = producto;
+    }
+    
+    public String getProducto() {
+        return producto;
+    }
+}
+```
 
