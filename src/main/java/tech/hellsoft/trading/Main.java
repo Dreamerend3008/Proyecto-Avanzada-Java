@@ -1,5 +1,6 @@
 package tech.hellsoft.trading;
 
+import java.util.Map;
 import java.util.Scanner;
 import tech.hellsoft.trading.config.Configuration;
 import tech.hellsoft.trading.enums.Product;
@@ -17,7 +18,6 @@ import tech.hellsoft.trading.dto.server.BroadcastNotificationMessage;
 
 /**
  * CLI Trading Bot with interactive menu.
- *
  * Students should implement the TODO methods below to complete the trading bot
  * functionality.
  */
@@ -48,7 +48,7 @@ public final class Main {
       System.out.println();
 
       // 4. Interactive CLI menu
-      runInteractiveCLI(connector, bot);
+        // runInteractiveCLI(connector, bot);
 
     } catch (Exception e) {
       System.err.println("❌ Error: " + e.getMessage());
@@ -176,24 +176,66 @@ public final class Main {
     System.out.println("      - Calcular P&L%");
   }
 
-  private static void handleInventario(MyTradingBot bot) {
+  private static void handleInventario(ClienteBolsa cliente) {
     System.out.println("\n📦 INVENTARIO");
     System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    System.out.println("(vacío)");
+
+    EstadoCliente estado = cliente.getEstado();
+    Map<Product, Integer> inventario = estado.getInventario();
+
+    if(inventario.isEmpty()) {
+        System.out.println("Vacio");
+        System.out.println();
+        return;
+    }
+    int totalUnidades = 0;
+    double valorTotal = 0.0;
+
+    for(Map.Entry<Product, Integer> entry : inventario.entrySet()) {
+        Product producto = entry.getKey();
+        int cantidad = entry.getValue();
+
+        double precio = estado.getPreciosActuales().getOrDefault(producto, 0.0);
+        double valor = cantidad * precio;
+
+        System.out.printf(" - %s: %d unidades | Valor estimado: $%.2f%n",
+                          producto, cantidad, valor);
+
+        totalUnidades += cantidad;
+        valorTotal += valor;
+    }
+    System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    System.out.printf("Total unidades: %d%n", totalUnidades);
+    System.out.printf("Valor total inventario: $%.2f%n", valorTotal);
     System.out.println();
-    System.out.println("TODO: Implementar listado de inventario");
-    System.out.println("      - Obtener Map<String, Integer> de EstadoCliente");
-    System.out.println("      - Para cada producto: mostrar cantidad y valor");
   }
 
-  private static void handlePrecios(MyTradingBot bot) {
-    System.out.println("\n💹 PRECIOS DE MERCADO");
-    System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    System.out.println("(esperando tickers...)");
-    System.out.println();
-    System.out.println("TODO: Implementar listado de precios");
-    System.out.println("      - Obtener Map<String, Double> de EstadoCliente");
-    System.out.println("      - Mostrar bid, ask, mid de cada producto");
+  private static void handlePrecios(ClienteBolsa cliente) {
+      System.out.println("\n💹 PRECIOS DE MERCADO");
+      System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      EstadoCliente estado = cliente.getEstado();
+      Map<Product, Double> precios = estado.getPreciosActuales();
+
+      if (precios.isEmpty()) {
+          System.out.println("(esperando tickers...)");
+          System.out.println();
+          return;
+      }
+
+      for (Map.Entry<Product, Double> entry : precios.entrySet()) {
+          Product producto = entry.getKey();
+          double mid = entry.getValue();
+
+          // Calcular bid y ask aproximados (±2%)
+          double bid = mid * 0.98;
+          double ask = mid * 1.02;
+
+          System.out.printf("%s: $%.2f (bid: $%.2f, ask: $%.2f)%n",
+                  producto, mid, bid, ask);
+      }
+
+      System.out.println();
   }
 
   private static void handleComprar(String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
