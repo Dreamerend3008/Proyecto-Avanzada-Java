@@ -162,19 +162,24 @@ public final class Main {
     }
   }
 
-  private static void handleStatus(MyTradingBot bot) {
-    System.out.println("\n📊 ESTADO ACTUAL");
-    System.out.println("━━━━━━━━━━━━━━━━━━━━━");
-    System.out.println("💰 Saldo: $0.00");
-    System.out.println("📦 Valor inventario: $0.00");
-    System.out.println("💎 Patrimonio neto: $0.00");
-    System.out.println("📈 P&L: +0.00%");
+  private static void handleStatus(ClienteBolsa cliente) {
+    EstadoCliente estado = cliente.getEstado();
     System.out.println();
-    System.out.println("TODO: Implementar cálculo de estado real");
-    System.out.println("      - Leer saldo de EstadoCliente");
-    System.out.println("      - Calcular valor de inventario");
-    System.out.println("      - Calcular P&L%");
-  }
+    System.out.println("📊 ESTADO ACTUAL");
+    System.out.println("━━━━━━━━━━━━━━━━━━━━━");
+
+    double saldo = estado.getSaldo();
+    double valorInventario = estado.calcularValorInventario();
+    double patrimonio = saldo + valorInventario;
+    double pl = estado.calcularPL();
+
+    System.out.printf("💰 Saldo: $%.2f%n", saldo);
+    System.out.printf("📦 Valor inventario: $%.2f%n", valorInventario);
+    System.out.printf("💎 Patrimonio neto: $%.2f%n", patrimonio);
+    System.out.printf("📈 P&L: %.2f%%%n", pl);
+
+    System.out.println();
+}
 
   private static void handleInventario(ClienteBolsa cliente) {
     System.out.println("\n📦 INVENTARIO");
@@ -315,31 +320,62 @@ public final class Main {
       }
   }
 
-  private static void handleOfertas(MyTradingBot bot) {
-    System.out.println("\n📬 OFERTAS PENDIENTES");
-    System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    System.out.println("(sin ofertas pendientes)");
+private static void handleOfertas(ClienteBolsa cliente) {
     System.out.println();
-    System.out.println("TODO: Implementar listado de ofertas");
-    System.out.println("      - Guardar ofertas en onOffer()");
-    System.out.println("      - Mostrar: offerId, producto, cantidad, precio");
-  }
+    System.out.println("📬 OFERTAS PENDIENTES");
+    System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-  private static void handleAceptarOferta(String[] parts, ConectorBolsa connector, MyTradingBot bot) {
-    if (parts.length < 2) {
-      System.out.println("❌ Uso: aceptar <offerId>");
-      return;
+    EstadoCliente estado = cliente.getEstado();
+    Map<String, OfferMessage> ofertas = estado.getOfertasPendientes();
+
+    if (ofertas == null || ofertas.isEmpty()) {
+        System.out.println("(no hay ofertas pendientes)");
+        System.out.println();
+        return;
     }
 
-    String offerId = parts[1];
+    for (Map.Entry<String, OfferMessage> entry : ofertas.entrySet()) {
+        OfferMessage oferta = entry.getValue();
 
-    System.out.println("\n✅ Aceptando oferta: " + offerId);
+        System.out.println("ID: " + oferta.getOfferId());
+        System.out.println("Producto: " + oferta.getProduct());
+        System.out.println("Cantidad: " + oferta.getQuantityRequested());
+        System.out.println("Precio máximo: " + oferta.getMaxPrice());
+        System.out.println("De: " + oferta.getBuyer());
+        System.out.println("──────────────────────────────────");
+    }
+
     System.out.println();
-    System.out.println("TODO: Implementar aceptación de oferta");
-    System.out.println("      1. Buscar oferta en Map de ofertas pendientes");
-    System.out.println("      2. Validar que tengas el producto");
-    System.out.println("      3. Llamar connector.aceptarOferta()");
-  }
+}
+
+
+private static void handleAceptarOferta(String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
+    if (parts.length < 2) {
+        System.out.println("❌ Uso: aceptar <offerId>");
+        return;
+    }
+    String offerId = parts[1];
+    // 1. Buscar oferta en el mapa
+    OfferMessage oferta = cliente.getEstado().getOfertasPendientes().get(offerId);
+    if (oferta == null) {
+        System.out.println("❌ No existe una oferta con ID: " + offerId);
+        return;
+    }
+    // 2. Validar inventario
+    int disponible = cliente.getEstado().getInventario()
+            .getOrDefault(oferta.getProduct(), 0);
+
+    if (disponible < oferta.getQuantityRequested()) {
+        System.out.println("❌ Inventario insuficiente");
+        System.out.println("   Tienes: " + disponible);
+        System.out.println("   Necesitas: " + oferta.getQuantityRequested());
+        return;
+    }
+    // 3. Llamar a ClienteBolsa para aceptar
+    cliente.aceptarOferta(offerId);
+
+    System.out.println("✅ Oferta aceptada correctamente.");
+}
 
   private static void printHelp() {
     System.out.println("\n📚 AYUDA COMPLETA - Comandos del Trading Bot");
