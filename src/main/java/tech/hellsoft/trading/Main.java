@@ -111,38 +111,38 @@ public final class Main {
     System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   }
 
-  private static void handleCommand(String command, String[] parts, ConectorBolsa connector, MyTradingBot bot) {
+  private static void handleCommand(String command, String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
     switch (command) {
     case "status" :
-      handleStatus(bot);
+      handleStatus(cliente);
       break;
 
     case "inventario" :
-      handleInventario(bot);
+      handleInventario(cliente);
       break;
 
     case "precios" :
-      handlePrecios(bot);
+      handlePrecios(cliente);
       break;
 
     case "comprar" :
-      handleComprar(parts, connector, bot);
+      handleComprar(parts, connector, cliente);
       break;
 
     case "vender" :
-      handleVender(parts, connector, bot);
+      handleVender(parts, connector, cliente);
       break;
 
     case "producir" :
-      handleProducir(parts, connector, bot);
+      handleProducir(parts, connector, cliente);
       break;
 
     case "ofertas" :
-      handleOfertas(bot);
+      handleOfertas(cliente);
       break;
 
     case "aceptar" :
-      handleAceptarOferta(parts, connector, bot);
+      handleAceptarOferta(parts, connector, cliente);
       break;
 
     case "ayuda" :
