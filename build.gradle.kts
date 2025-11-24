@@ -23,7 +23,7 @@ repositories {
 
 dependencies {
     // Hellsoft SDK - Ready when available
-    implementation("tech.hellsoft.trading:websocket-client:1.0.4")
+    implementation("tech.hellsoft.trading:websocket-client:1.1.1")
     
     // GSON for JSON processing
     implementation("com.google.code.gson:gson:2.10.1")
