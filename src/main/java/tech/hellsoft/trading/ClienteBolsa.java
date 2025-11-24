@@ -289,7 +289,7 @@ public class ClienteBolsa implements EventListener {
 
         // aplicar bonnus de premium
         if (premium && receta.isPremium()) {
-            cantidad = CalculadoraProduccion.aplicarBonusPremium(unidadesBase, receta.getBonusPremium()
+            cantidad = CalculadoraProduccion.aplicarBonusPremium(cantidad, receta.getBonusPremium();
         }
 
         // enviar al servidor produccion basica
