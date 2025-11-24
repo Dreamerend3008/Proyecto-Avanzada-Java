@@ -1,7 +1,5 @@
 package tech.hellsoft.trading;
 
-//import tech.hellsoft.trading.model.Recipe;
-//import tech.hellsoft.trading.model.Role;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,8 +7,9 @@ import java.util.List;
 import java.util.ArrayList;
 import lombok.Getter;
 import tech.hellsoft.trading.dto.server.OfferMessage;
-import tech.hellsoft.trading.dto.server.Recipe;
 import tech.hellsoft.trading.enums.Product;
+import tech.hellsoft.trading.model.Receta;
+import tech.hellsoft.trading.model.Rol;
 
 public class EstadoCliente implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -20,7 +19,7 @@ public class EstadoCliente implements Serializable {
     private double saldoInicial;
     private Map<Product, Integer> inventario;
     private Map<Product, Double> preciosActuales;
-    private Map<Product, Recipe> recetas; // Mapa de recetas por nombre
+    private Map<Product, Receta> recetas; // Mapa de recetas por nombre
     private Map<String, OfferMessage> ofertasPendientes;
     private Rol rol; // Rol del cliente
     private List<Product> productosAutorizados;
@@ -31,7 +30,8 @@ public class EstadoCliente implements Serializable {
     public EstadoCliente() {
         this.inventario = new HashMap<>();
         this.preciosActuales = new HashMap<>();
-        //this.recetas = new HashMap<>();
+        this.recetas = new HashMap<>();
+        this.ofertasPendientes = new HashMap<>();
         this.productosAutorizados = new ArrayList<>();
         this.saldo = 0.0;
         this.saldoInicial = 0.0;
@@ -40,16 +40,7 @@ public class EstadoCliente implements Serializable {
     }
     public double calcularPL(){
         double valorInventario = 0.0;
-        for (Map.Entry<Product, Integer> entry : inventario.entrySet()) {
-            Product producto = entry.getKey();
-            int cantidad = entry.getValue();
-
-            // Obtener precio actual (si no hay precio, asumir 0)
-            Double precio = preciosActuales.get(producto);
-            if (precio != null && precio > 0) {
-                valorInventario += cantidad * precio;
-            }
-        }
+        valorInventario = calcularValorInventario();
         double patrimonioNeto = saldo + valorInventario;
         if(saldoInicial == 0){
             return 0.0;
@@ -100,15 +91,15 @@ public class EstadoCliente implements Serializable {
         return rol;
     }
 
-    public void setRol(Role rol) {
+    public void setRol(Rol rol) {
         this.rol = rol;
     }
 
-    public Map<Product, Recipe> getRecetas() {
+    public Map<Product, Receta> getRecetas() {
         return recetas;
     }
 
-    public void setRecetas(Map<Product, Recipe> recetas) {
+    public void setRecetas(Map<Product, Receta> recetas) {
         this.recetas = recetas;
     }
 

@@ -1,13 +1,15 @@
 package tech.hellsoft.trading.exception.produccion;
 
-public class RecetaNoEncontradaException extends ProduccionException {
-    private String receta;
+import tech.hellsoft.trading.model.Receta;
 
-    public RecetaNoEncontradaException(String receta) {
+public class RecetaNoEncontradaException extends ProduccionException {
+    private Receta receta;
+
+    public RecetaNoEncontradaException(Receta receta) {
         super("Receta no encontrada: " + receta);
         this.receta = receta;
     }
-    public String getReceta(){
+    public Receta getReceta(){
         return receta;
     }
 }

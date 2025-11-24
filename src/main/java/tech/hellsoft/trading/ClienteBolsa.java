@@ -1,5 +1,6 @@
 package tech.hellsoft.trading;
 
+import java.util.HashMap;
 import tech.hellsoft.trading.dto.client.AcceptOfferMessage;
 import tech.hellsoft.trading.dto.client.ProductionUpdateMessage;
 import tech.hellsoft.trading.dto.server.*;
@@ -8,16 +9,23 @@ import tech.hellsoft.trading.enums.MessageType;
 import tech.hellsoft.trading.enums.OrderMode;
 import tech.hellsoft.trading.enums.OrderSide;
 import tech.hellsoft.trading.enums.Product;
+import tech.hellsoft.trading.exception.produccion.IngredientesInsuficientesException;
+import tech.hellsoft.trading.exception.produccion.RecetaNoEncontradaException;
+import tech.hellsoft.trading.exception.trading.InventarioInsuficienteException;
+import tech.hellsoft.trading.exception.trading.ProductoNoAutorizadoException;
+import tech.hellsoft.trading.exception.trading.SaldoInsuficienteException;
 import tech.hellsoft.trading.model.Receta;
 import tech.hellsoft.trading.model.Rol;
 import tech.hellsoft.trading.util.CalculadoraProduccion;
 import tech.hellsoft.trading.util.RecetaValidator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.Getter;
 
-// tampoco va a compilar hasta que daiana haga su parte
+// Daiana si hizo su parte wujuuu
 public class ClienteBolsa implements EventListener {
     private final ConectorBolsa conector;
+    @Getter
     private final EstadoCliente estado;
     private final AtomicInteger orderIdCounter;
 
@@ -29,6 +37,9 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onLoginOk(LoginOKMessage msg){
+        if(msg==null){
+            return;
+        }
         System.out.println("LOGIN OK");
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
@@ -37,17 +48,25 @@ public class ClienteBolsa implements EventListener {
         estado.setSaldoInicial(msg.getInitialBalance());
         estado.setNombreEquipo(msg.getTeam());
 
-        if(msg.getRole() != null){
+        /*if(msg.getRole() != null ){
             Rol rol = new Rol(
-                    msg.getRole().getBranches(),
-                    msg.getRole().getMaxDepth(),
-                    msg.getRole().getDecay(),
-                    msg.getRole().getBaseEnergy(),
-                    msg.getRole().getLevelEnergy()
+                    msg.getRole().getBranches() != null ? msg.getRole().getBranches() : 2,
+                    msg.getRole().getMaxDepth() != null ? msg.getRole().getMaxDepth() : 3,
+                    msg.getRole().getDecay() != null ? msg.getRole().getDecay() : 0.9,
+                    msg.getRole().getBaseEnergy() != null ? msg.getRole().getBaseEnergy() : 100.0,
+                    msg.getRole().getLevelEnergy() != null ? msg.getRole().getLevelEnergy() : 10.0
             );
             estado.setRol(rol);
             System.out.println("Rol configurado: "+rol);
-        }
+        } else {
+            // Set default role if not provided by server
+            Rol defaultRol = new Rol(2, 3, 0.9, 100.0, 10.0);
+            estado.setRol(defaultRol);
+            System.out.println("Rol por defecto configurado (servidor no envió rol completo)");
+        }*/
+        // lets print what we get on role
+        System.out.println("Rol recibido: "+msg.getRole());
+
 
         if(msg.getAuthorizedProducts() != null){
             estado.setProductosAutorizados(msg.getAuthorizedProducts());
@@ -55,7 +74,17 @@ public class ClienteBolsa implements EventListener {
         }
 
         if(msg.getRecipes() != null){
-            estado.setRecetas(msg.getRecipes());
+            /*Map<Product, Recipe> r = msg.getRecipes();
+            Map<Product, Receta> recetasMapeadas = new HashMap<>();
+            for(Map.Entry<Product, Recipe> entry : r.entrySet()){
+                Receta receta = new Receta(
+                        entry.getKey(),
+                        entry.getValue().getIngredients(),
+                        entry.getValue().getPremiumBonus()
+                );
+                recetasMapeadas.put(entry.getKey(), receta);
+            }
+            estado.setRecetas(recetasMapeadas);*/
             System.out.println("Recetas recibidas: "+msg.getRecipes().size());
         }
 
@@ -83,14 +112,22 @@ public class ClienteBolsa implements EventListener {
             inventario.put(producto, cantidadActual + cantidad);
             System.out.println("Compra realizada: " + cantidad + " unidades de " + producto );
         } else if ("SELL".equalsIgnoreCase(lado)) {
-            // falta implementar lo de esperar al mensaje de respuesta
+            // falta esta logica ppero esto me dio la ia
+            estado.setSaldo(estado.getSaldo() + monto);
+            Map<Product, Integer> inventario = estado.getInventario();
+            int cantidadActual = inventario.getOrDefault(producto, 0);
+            inventario.put(producto, cantidadActual - cantidad);
+            System.out.println("Venta realizada: " + cantidad + " unidades de " + producto);
         }
+        System.out.println("Nuevo saldo: $" + String.format("%.2f", estado.getSaldo()));
+        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        System.out.println();
     }
     @Override
     public void onTicker(TickerMessage ticker) {
         Product producto = ticker.getProduct();
-        double mid = ticker.getMid();
-        estado.getPreciosActuales().put(producto, mid);
+        //double mid = ticker.getMid();
+        //estado.getPreciosActuales().put(producto, mid);
         // revisar si necesitamos imprimirlos
     }
 
@@ -176,17 +213,7 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onConnectionLost(Throwable throwable) {
-        System.err.println("\n⚠️ CONEXIÓN PERDIDA");
-        System.err.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        System.err.println("Razón: " + e.getMessage());
-        System.err.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        System.err.println();
-        System.err.println("💡 Recomendaciones:");
-        System.err.println("   1. Guardar snapshot: 'snapshot save'");
-        System.err.println("   2. Reiniciar programa");
-        System.err.println("   3. Cargar snapshot: 'snapshot load'");
-        System.err.println("   4. Hacer resync: 'resync'");
-        System.err.println();
+
     }
 
     // metodos NUESTROS MUAJAJAJAJ
@@ -209,14 +236,13 @@ public class ClienteBolsa implements EventListener {
         }
 
         // crear orden
-        MessageType tipoMensaje = MessageType.ORDER;
         String orderId = "ORD-" + orderIdCounter.getAndIncrement();
         OrderMode orderMode = OrderMode.MARKET;
-        Double limitPrice = 100000000.0;
-        String TipoDeOrder = mensaje;
-        if(TipoDeOrder.equalsIgnoreCase("LIMIT")){
+        Double limitPrice = null;
+
+        if(mensaje.equalsIgnoreCase("LIMIT")){
             orderMode = OrderMode.LIMIT;
-            // todavia revisar como poner el precio en limit
+            limitPrice = precioEstimado * 1.02; // 2% sobre el precio de mercado
         }
 
         OrderMessage orden = OrderMessage.builder()
@@ -224,7 +250,7 @@ public class ClienteBolsa implements EventListener {
                 .side(OrderSide.BUY)
                 .product(producto)
                 .qty(cantidad)
-                .mode(OrderMode.MARKET)
+                .mode(orderMode)
                 .limitPrice(limitPrice)
                 .build();
 
@@ -243,17 +269,23 @@ public class ClienteBolsa implements EventListener {
         }
 
         // crear orden
-        MessageType tipoMensaje = MessageType.ORDER;
         String orderId = "ORD-" + orderIdCounter.getAndIncrement();
         OrderMode orderMode = OrderMode.MARKET;
-        // falta implementar limit sell para hacer ordenes mas seguras
-        // por ahora no se si mande ordenes xd
+        Double limitPrice = null;
+
+        if(mensaje != null && mensaje.equalsIgnoreCase("LIMIT")){
+            orderMode = OrderMode.LIMIT;
+            double precioEstimado = estado.getPreciosActuales().getOrDefault(producto, 0.0);
+            limitPrice = precioEstimado * 0.98; // 2% bajo el precio de mercado
+        }
+
         OrderMessage orden = OrderMessage.builder()
                 .clOrdID(orderId)
                 .side(OrderSide.SELL)
                 .product(producto)
                 .qty(cantidad)
                 .mode(orderMode)
+                .limitPrice(limitPrice)
                 .build();
 
         conector.enviarOrden(orden);
@@ -261,16 +293,16 @@ public class ClienteBolsa implements EventListener {
 
     }
 
-    public void producir(Product producto, boolean premium) throws ProductoNoAutorizadoException, RecetaNoEncontradaException, IngredientesInsuficientesException{
+    public void producir(Product producto, boolean premium) throws ProductoNoAutorizadoException, RecetaNoEncontradaException, IngredientesInsuficientesException {
         // validar si el producto es autorizado
         if(!estado.getProductosAutorizados().contains(producto)){
-            throw mew ProductoNoAutorizadoException(producto, estado.getProductosAutorizados());
+            throw new ProductoNoAutorizadoException(producto, estado.getProductosAutorizados());
         }
 
         // obtener la receta
         Receta receta = estado.getRecetas().get(producto);
         if(receta == null) {
-            throw new RecetaNoEncontradaException(producto);
+            throw new RecetaNoEncontradaException(receta);
         }
 
         if(premium){
@@ -279,7 +311,6 @@ public class ClienteBolsa implements EventListener {
                         receta.getIngredientes(),
                         estado.getInventario()
                 );
-                return;
             }
             RecetaValidator.consumirIngredientes(receta, estado.getInventario());
             System.out.println("Ingredientes consumidos: " + receta.getIngredientes());
@@ -289,7 +320,7 @@ public class ClienteBolsa implements EventListener {
 
         // aplicar bonnus de premium
         if (premium && receta.isPremium()) {
-            cantidad = CalculadoraProduccion.aplicarBonusPremium(cantidad, receta.getBonusPremium();
+            cantidad = CalculadoraProduccion.aplicarBonusPremium(cantidad, receta.getBonusPremium());
         }
 
         // enviar al servidor produccion basica
@@ -323,9 +354,5 @@ public class ClienteBolsa implements EventListener {
                 .build();
         conector.enviarRespuestaOferta(respuesta);
         estado.getOfertasPendientes().remove(offerId);
-    }
-
-    public EstadoCliente getEstado() {
-        return estado;
     }
 }
