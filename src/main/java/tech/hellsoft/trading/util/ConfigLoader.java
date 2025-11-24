@@ -2,7 +2,7 @@ package tech.hellsoft.trading.util;
 
 import com.google.gson.Gson;
 import tech.hellsoft.trading.config.Configuration;
-import tech.hellsoft.trading.exception.ConfiguracionInvalidaException;
+import tech.hellsoft.trading.exception.configuracion.ConfiguracionInvalidaException;
 
 import java.io.IOException;
 import java.nio.file.Files;
