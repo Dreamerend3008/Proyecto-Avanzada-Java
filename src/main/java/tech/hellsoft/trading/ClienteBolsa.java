@@ -24,13 +24,13 @@ import lombok.Getter;
 
 // Daiana si hizo su parte wujuuu
 public class ClienteBolsa implements EventListener {
-    private final ConectorBolsa conector;
+    private ConectorBolsa conector;
     @Getter
     private final EstadoCliente estado;
     private final AtomicInteger orderIdCounter;
 
-    public ClienteBolsa() {
-        this.conector = new ConectorBolsa();
+    public ClienteBolsa(ConectorBolsa conector) {
+        this.conector = conector;
         this.estado = new EstadoCliente();
         this.orderIdCounter = new AtomicInteger(0);
     }
@@ -47,14 +47,14 @@ public class ClienteBolsa implements EventListener {
         estado.setSaldo(msg.getInitialBalance());
         estado.setSaldoInicial(msg.getInitialBalance());
         estado.setNombreEquipo(msg.getTeam());
-
-        /*if(msg.getRole() != null ){
+        estado.setInventario(msg.getInventory());
+        if(msg.getRole() != null ){
             Rol rol = new Rol(
-                    msg.getRole().getBranches() != null ? msg.getRole().getBranches() : 2,
-                    msg.getRole().getMaxDepth() != null ? msg.getRole().getMaxDepth() : 3,
-                    msg.getRole().getDecay() != null ? msg.getRole().getDecay() : 0.9,
-                    msg.getRole().getBaseEnergy() != null ? msg.getRole().getBaseEnergy() : 100.0,
-                    msg.getRole().getLevelEnergy() != null ? msg.getRole().getLevelEnergy() : 10.0
+                    msg.getRole().getBranches(),
+                    msg.getRole().getMaxDepth(),
+                    msg.getRole().getDecay(),
+                    msg.getRole().getBaseEnergy(),
+                    msg.getRole().getLevelEnergy()
             );
             estado.setRol(rol);
             System.out.println("Rol configurado: "+rol);
@@ -63,9 +63,7 @@ public class ClienteBolsa implements EventListener {
             Rol defaultRol = new Rol(2, 3, 0.9, 100.0, 10.0);
             estado.setRol(defaultRol);
             System.out.println("Rol por defecto configurado (servidor no envió rol completo)");
-        }*/
-        // lets print what we get on role
-        System.out.println("Rol recibido: "+msg.getRole());
+        }
 
 
         if(msg.getAuthorizedProducts() != null){
@@ -74,7 +72,7 @@ public class ClienteBolsa implements EventListener {
         }
 
         if(msg.getRecipes() != null){
-            /*Map<Product, Recipe> r = msg.getRecipes();
+            Map<Product, Recipe> r = msg.getRecipes();
             Map<Product, Receta> recetasMapeadas = new HashMap<>();
             for(Map.Entry<Product, Recipe> entry : r.entrySet()){
                 Receta receta = new Receta(
@@ -83,11 +81,12 @@ public class ClienteBolsa implements EventListener {
                         entry.getValue().getPremiumBonus()
                 );
                 recetasMapeadas.put(entry.getKey(), receta);
+                System.out.println("Receta cargada: "+receta);
+                // cargar el resto de las recetas en hardcode
             }
-            estado.setRecetas(recetasMapeadas);*/
-            System.out.println("Recetas recibidas: "+msg.getRecipes().size());
+            estado.setRecetas(recetasMapeadas);
+            System.out.println("Cantidad de recetas recibidas: "+msg.getRecipes().size());
         }
-
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("Saldo inicial: "+estado.getSaldoInicial());
         System.out.println("Equipo: "+estado.getNombreEquipo());
@@ -125,10 +124,19 @@ public class ClienteBolsa implements EventListener {
     }
     @Override
     public void onTicker(TickerMessage ticker) {
+        if(ticker == null){
+            return;
+        }
         Product producto = ticker.getProduct();
-        //double mid = ticker.getMid();
-        //estado.getPreciosActuales().put(producto, mid);
-        // revisar si necesitamos imprimirlos
+        if(producto == null){
+            return;
+        }
+        Double precio = 0.0;
+        if(ticker.getBestBid() != null){
+            precio = ticker.getBestBid();
+        }
+
+        estado.getPreciosActuales().put(producto, precio);
     }
 
     @Override
@@ -193,7 +201,7 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onInventoryUpdate(InventoryUpdateMessage inventoryUpdateMessage) {
-
+        estado.setInventario(inventoryUpdateMessage.getInventory());
     }
 
     @Override
@@ -213,6 +221,11 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onConnectionLost(Throwable throwable) {
+
+    }
+
+    @Override
+    public void onGlobalPerformanceReport(GlobalPerformanceReportMessage globalPerformanceReportMessage) {
 
     }
 
@@ -273,7 +286,7 @@ public class ClienteBolsa implements EventListener {
         OrderMode orderMode = OrderMode.MARKET;
         Double limitPrice = null;
 
-        if(mensaje != null && mensaje.equalsIgnoreCase("LIMIT")){
+        if(mensaje != null && mensaje.equalsIgnoreCase("Limit")){
             orderMode = OrderMode.LIMIT;
             double precioEstimado = estado.getPreciosActuales().getOrDefault(producto, 0.0);
             limitPrice = precioEstimado * 0.98; // 2% bajo el precio de mercado
@@ -317,11 +330,10 @@ public class ClienteBolsa implements EventListener {
         }
 
         int cantidad = CalculadoraProduccion.calcularUnidades(estado.getRol());
-
-        // aplicar bonnus de premium
         if (premium && receta.isPremium()) {
             cantidad = CalculadoraProduccion.aplicarBonusPremium(cantidad, receta.getBonusPremium());
         }
+
 
         // enviar al servidor produccion basica
         ProductionUpdateMessage p = new ProductionUpdateMessage(MessageType.PRODUCTION_UPDATE, producto, cantidad);

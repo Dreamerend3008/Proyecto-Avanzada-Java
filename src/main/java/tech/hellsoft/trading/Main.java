@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import tech.hellsoft.trading.config.Configuration;
+import tech.hellsoft.trading.dto.server.GlobalPerformanceReportMessage;
 import tech.hellsoft.trading.enums.Product;
 import tech.hellsoft.trading.exception.produccion.IngredientesInsuficientesException;
 import tech.hellsoft.trading.exception.trading.ProductoNoAutorizadoException;
@@ -46,7 +47,7 @@ public final class Main {
       System.out.println();
       // 2. Create ClienteBolsa
       ConectorBolsa connector = new ConectorBolsa();
-      ClienteBolsa cliente = new ClienteBolsa();
+      ClienteBolsa cliente = new ClienteBolsa(connector);
       connector.addListener(cliente);
 
       // 3. Connect to server
@@ -54,10 +55,9 @@ public final class Main {
       connector.conectar(config.host(), config.apiKey());
       System.out.println("✅ Connected! Waiting for login...");
       System.out.println();
-
+      System.out.println("Authenticación exitosa: " + connector.getState());
       // 5. Interactive CLI menu
       runInteractiveCLI(connector, cliente);
-
     } catch (Exception e) {
       System.err.println("❌ Error: " + e.getMessage());
       if (e.getCause() != null) {
@@ -322,6 +322,7 @@ public final class Main {
 
       try {
           Product producto = Product.valueOf(parts[1]);
+
           int cantidadDeseada = Integer.parseInt(parts[2]);
           String tipo = parts[3].toLowerCase();
           boolean premium = tipo.equals("premium");
@@ -349,7 +350,6 @@ public final class Main {
 
           // Calculate number of production cycles needed
           int ciclosNecesarios = (int) Math.ceil((double) cantidadDeseada / unidadesPorProduccion);
-
           System.out.printf("📊 Se necesitan %d ciclos de producción para %d unidades%n",
                   ciclosNecesarios, cantidadDeseada);
           System.out.printf("   (%d unidades por ciclo)%n", unidadesPorProduccion);
@@ -594,5 +594,10 @@ public final class Main {
 
       // TODO: Implement reconnection logic
     }
+
+      @Override
+      public void onGlobalPerformanceReport(GlobalPerformanceReportMessage globalPerformanceReportMessage) {
+
+      }
   }
 }
