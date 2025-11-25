@@ -429,10 +429,9 @@ public final class Main {
 
   private static void handleAceptarOferta(String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
     if (parts.length < 2) {
-      System.out.println("❌ Uso: aceptar <offerId>");
-      return;
+        System.out.println("❌ Uso: aceptar <offerId>");
+        return;
     }
-
     String offerId = parts[1];
     cliente.aceptarOferta(offerId);
   }
