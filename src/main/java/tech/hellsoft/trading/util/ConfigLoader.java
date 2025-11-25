@@ -27,7 +27,7 @@ public final class ConfigLoader {
       String json = Files.readString(filePath);
       return parseConfiguration(json);
     } catch (IOException e) {
-      throw new ConfiguracionInvalidaException("Failed to read configuration file: " + e.getMessage(), e);
+      throw new ConfiguracionInvalidaException("Failed to read configuration file: " + e.getMessage());
     }
   }
 
@@ -57,7 +57,7 @@ public final class ConfigLoader {
     try {
       return GSON.fromJson(json, Configuration.class);
     } catch (Exception e) {
-      throw new ConfiguracionInvalidaException("Failed to parse configuration JSON: " + e.getMessage(), e);
+      throw new ConfiguracionInvalidaException("Failed to parse configuration JSON: " + e.getMessage());
     }
   }
 }

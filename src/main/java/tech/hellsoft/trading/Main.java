@@ -1,9 +1,18 @@
 package tech.hellsoft.trading;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import tech.hellsoft.trading.config.Configuration;
+import tech.hellsoft.trading.dto.server.GlobalPerformanceReportMessage;
 import tech.hellsoft.trading.enums.Product;
+import tech.hellsoft.trading.exception.produccion.IngredientesInsuficientesException;
+import tech.hellsoft.trading.exception.trading.ProductoNoAutorizadoException;
+import tech.hellsoft.trading.exception.produccion.RecetaNoEncontradaException;
+import tech.hellsoft.trading.exception.trading.InventarioInsuficienteException;
+import tech.hellsoft.trading.exception.trading.SaldoInsuficienteException;
+import tech.hellsoft.trading.model.Receta;
+import tech.hellsoft.trading.util.CalculadoraProduccion;
 import tech.hellsoft.trading.util.ConfigLoader;
 import tech.hellsoft.trading.dto.server.LoginOKMessage;
 import tech.hellsoft.trading.dto.server.ErrorMessage;
@@ -15,6 +24,7 @@ import tech.hellsoft.trading.dto.server.InventoryUpdateMessage;
 import tech.hellsoft.trading.dto.server.BalanceUpdateMessage;
 import tech.hellsoft.trading.dto.server.EventDeltaMessage;
 import tech.hellsoft.trading.dto.server.BroadcastNotificationMessage;
+
 
 /**
  * CLI Trading Bot with interactive menu.
@@ -28,17 +38,16 @@ public final class Main {
 
   private static boolean running = true;
 
-  public static void main(String[] args) {
+  static void main(String[] args) {
     try {
       // 1. Load configuration (apiKey, team, host)
       Configuration config = ConfigLoader.load("src/main/resources/config.json");
       printBanner();
       System.out.println("🚀 Starting Trading Bot for team: " + config.team());
       System.out.println();
-
-      // 2. Create connector and event listener
+      // 2. Create ClienteBolsa
       ConectorBolsa connector = new ConectorBolsa();
-      ClienteBolsa cliente = new ClienteBolsa();
+      ClienteBolsa cliente = new ClienteBolsa(connector);
       connector.addListener(cliente);
 
       // 3. Connect to server
@@ -46,13 +55,14 @@ public final class Main {
       connector.conectar(config.host(), config.apiKey());
       System.out.println("✅ Connected! Waiting for login...");
       System.out.println();
-
-      // 4. Interactive CLI menu
-        // runInteractiveCLI(connector, bot);
-
+      System.out.println("Authenticación exitosa: " + connector.getState());
+      // 5. Interactive CLI menu
+      runInteractiveCLI(connector, cliente);
     } catch (Exception e) {
       System.err.println("❌ Error: " + e.getMessage());
-      e.printStackTrace();
+      if (e.getCause() != null) {
+          System.err.println("   Causa: " + e.getCause().getMessage());
+      }
       System.exit(1);
     }
   }
@@ -65,7 +75,7 @@ public final class Main {
     System.out.println();
   }
 
-  private static void runInteractiveCLI(ConectorBolsa connector, MyTradingBot bot) {
+  private static void runInteractiveCLI(ConectorBolsa connector, ClienteBolsa cliente) {
     Scanner scanner = new Scanner(System.in);
 
     while (running) {
@@ -86,7 +96,7 @@ public final class Main {
       String[] parts = input.split("\\s+");
       String command = parts[0].toLowerCase();
 
-      handleCommand(command, parts, connector, bot);
+      handleCommand(command, parts, connector, cliente);
     }
 
     scanner.close();
@@ -103,7 +113,7 @@ public final class Main {
     System.out.println("  precios             - Ver precios de mercado");
     System.out.println("  comprar <producto> <cantidad> [mensaje]");
     System.out.println("  vender <producto> <cantidad> [mensaje]");
-    System.out.println("  producir <producto> <basico|premium>");
+    System.out.println("  producir <producto> <cantidad> <basico|premium>");
     System.out.println("  ofertas             - Ver ofertas pendientes");
     System.out.println("  aceptar <offerId>   - Aceptar una oferta");
     System.out.println("  ayuda               - Mostrar ayuda completa");
@@ -163,23 +173,31 @@ public final class Main {
   }
 
   private static void handleStatus(ClienteBolsa cliente) {
-    EstadoCliente estado = cliente.getEstado();
-    System.out.println();
-    System.out.println("📊 ESTADO ACTUAL");
+    System.out.println("\n📊 ESTADO ACTUAL");
     System.out.println("━━━━━━━━━━━━━━━━━━━━━");
 
+    EstadoCliente estado = cliente.getEstado();
     double saldo = estado.getSaldo();
-    double valorInventario = estado.calcularValorInventario();
-    double patrimonio = saldo + valorInventario;
-    double pl = estado.calcularPL();
+    double saldoInicial = estado.getSaldoInicial();
+
+    // Calculate inventory value
+    double valorInventario = 0.0;
+    for (Map.Entry<Product, Integer> entry : estado.getInventario().entrySet()) {
+      Product producto = entry.getKey();
+      int cantidad = entry.getValue();
+      double precio = estado.getPreciosActuales().getOrDefault(producto, 0.0);
+      valorInventario += cantidad * precio;
+    }
+
+    double patrimonioNeto = saldo + valorInventario;
+    double pnl = saldoInicial > 0 ? ((patrimonioNeto - saldoInicial) / saldoInicial) * 100 : 0.0;
 
     System.out.printf("💰 Saldo: $%.2f%n", saldo);
     System.out.printf("📦 Valor inventario: $%.2f%n", valorInventario);
-    System.out.printf("💎 Patrimonio neto: $%.2f%n", patrimonio);
-    System.out.printf("📈 P&L: %.2f%%%n", pl);
-
+    System.out.printf("💎 Patrimonio neto: $%.2f%n", patrimonioNeto);
+    System.out.printf("📈 P&L: %+.2f%%%n", pnl);
     System.out.println();
-}
+  }
 
   private static void handleInventario(ClienteBolsa cliente) {
     System.out.println("\n📦 INVENTARIO");
@@ -290,92 +308,133 @@ public final class Main {
           System.out.println("❌ Cantidad inválida");
       } catch (InventarioInsuficienteException e) {
           System.out.printf("❌ Inventario insuficiente de %s. Tienes: %d, Necesitas: %d%n",
-                  e.getProducto(), e.getDisponible(), e.getRequerido());
+                  e.getProducto(), e.getCantidadDisponible(), e.getCantidadRequerida());
       } catch (Exception e) {
           System.out.println("❌ Error: " + e.getMessage());
       }
   }
 
   private static void handleProducir(String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
-      if (parts.length < 3) {
-          System.out.println("❌ Uso: producir <producto> <basico|premium>");
+      if (parts.length < 4) {
+          System.out.println("❌ Uso: producir <producto> <cantidad> <basico|premium>");
           return;
       }
 
       try {
           Product producto = Product.valueOf(parts[1]);
-          String tipo = parts[2].toLowerCase();
+
+          int cantidadDeseada = Integer.parseInt(parts[2]);
+          String tipo = parts[3].toLowerCase();
           boolean premium = tipo.equals("premium");
 
-          cliente.producir(producto, premium);
+          if (cantidadDeseada <= 0) {
+              System.out.println("❌ La cantidad debe ser mayor que 0");
+              return;
+          }
 
+          // Calculate how many times we need to produce
+          EstadoCliente estado = cliente.getEstado();
+          Receta receta = estado.getRecetas().get(producto);
+          if (receta == null) {
+              System.out.println("❌ Receta no encontrada para " + producto);
+              return;
+          }
+
+          int unidadesPorProduccion = CalculadoraProduccion.calcularUnidades(estado.getRol());
+          if (premium && receta.isPremium()) {
+              unidadesPorProduccion = CalculadoraProduccion.aplicarBonusPremium(
+                      unidadesPorProduccion,
+                      receta.getBonusPremium()
+              );
+          }
+
+          // Calculate number of production cycles needed
+          int ciclosNecesarios = (int) Math.ceil((double) cantidadDeseada / unidadesPorProduccion);
+          System.out.printf("📊 Se necesitan %d ciclos de producción para %d unidades%n",
+                  ciclosNecesarios, cantidadDeseada);
+          System.out.printf("   (%d unidades por ciclo)%n", unidadesPorProduccion);
+
+          // If premium, validate ingredients for all cycles
+          if (premium) {
+              Map<Product, Integer> ingredientesTotales = new HashMap<>();
+              for (Map.Entry<Product, Integer> entry : receta.getIngredientes().entrySet()) {
+                  ingredientesTotales.put(entry.getKey(), entry.getValue() * ciclosNecesarios);
+              }
+
+              // Check if we have enough ingredients
+              for (Map.Entry<Product, Integer> entry : ingredientesTotales.entrySet()) {
+                  Product ingrediente = entry.getKey();
+                  int necesario = entry.getValue();
+                  int disponible = estado.getInventario().getOrDefault(ingrediente, 0);
+
+                  if (disponible < necesario) {
+                      System.out.printf("❌ Ingredientes insuficientes para %d ciclos%n", ciclosNecesarios);
+                      System.out.printf("   %s: necesitas %d, tienes %d%n",
+                              ingrediente, necesario, disponible);
+                      return;
+                  }
+              }
+          }
+
+          // Produce the requested cycles
+          int totalProducido = 0;
+          for (int i = 0; i < ciclosNecesarios; i++) {
+              cliente.producir(producto, premium);
+              totalProducido += unidadesPorProduccion;
+          }
+
+          System.out.printf("✅ Producción completada: %d unidades de %s (%s)%n",
+                  totalProducido, producto, premium ? "premium" : "básico");
+
+      } catch (NumberFormatException e) {
+          System.out.println("❌ Cantidad inválida");
       } catch (ProductoNoAutorizadoException e) {
           System.out.println("❌ " + e.getMessage());
       } catch (RecetaNoEncontradaException e) {
-          System.out.println("❌ " + e.getMessage());
+          System.out.println("❌ Receta no encontrada: " + e.getMessage());
       } catch (IngredientesInsuficientesException e) {
-          System.out.println("❌ " + e.getMessage());
+          System.out.println("❌ Ingredientes insuficientes:");
+          System.out.println(e.getMessage());
       } catch (Exception e) {
           System.out.println("❌ Error: " + e.getMessage());
       }
   }
 
-private static void handleOfertas(ClienteBolsa cliente) {
-    System.out.println();
-    System.out.println("📬 OFERTAS PENDIENTES");
+  private static void handleOfertas(ClienteBolsa cliente) {
+    System.out.println("\n📬 OFERTAS PENDIENTES");
     System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     EstadoCliente estado = cliente.getEstado();
     Map<String, OfferMessage> ofertas = estado.getOfertasPendientes();
 
-    if (ofertas == null || ofertas.isEmpty()) {
-        System.out.println("(no hay ofertas pendientes)");
-        System.out.println();
-        return;
+    if (ofertas.isEmpty()) {
+      System.out.println("(sin ofertas pendientes)");
+      System.out.println();
+      return;
     }
 
     for (Map.Entry<String, OfferMessage> entry : ofertas.entrySet()) {
-        OfferMessage oferta = entry.getValue();
-
-        System.out.println("ID: " + oferta.getOfferId());
-        System.out.println("Producto: " + oferta.getProduct());
-        System.out.println("Cantidad: " + oferta.getQuantityRequested());
-        System.out.println("Precio máximo: " + oferta.getMaxPrice());
-        System.out.println("De: " + oferta.getBuyer());
-        System.out.println("──────────────────────────────────");
+      OfferMessage oferta = entry.getValue();
+      System.out.printf("ID: %s%n", oferta.getOfferId());
+      System.out.printf("  Comprador: %s%n", oferta.getBuyer());
+      System.out.printf("  Producto: %s%n", oferta.getProduct());
+      System.out.printf("  Cantidad: %d%n", oferta.getQuantityRequested());
+      System.out.printf("  Precio máximo: $%.2f%n", oferta.getMaxPrice());
+      System.out.println("  ────────────────────────────");
     }
 
     System.out.println();
-}
+    System.out.println("💡 Usa 'aceptar <offerId>' para aceptar una oferta");
+  }
 
-
-private static void handleAceptarOferta(String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
+  private static void handleAceptarOferta(String[] parts, ConectorBolsa connector, ClienteBolsa cliente) {
     if (parts.length < 2) {
         System.out.println("❌ Uso: aceptar <offerId>");
         return;
     }
     String offerId = parts[1];
-    // 1. Buscar oferta en el mapa
-    OfferMessage oferta = cliente.getEstado().getOfertasPendientes().get(offerId);
-    if (oferta == null) {
-        System.out.println("❌ No existe una oferta con ID: " + offerId);
-        return;
-    }
-    // 2. Validar inventario
-    int disponible = cliente.getEstado().getInventario()
-            .getOrDefault(oferta.getProduct(), 0);
-
-    if (disponible < oferta.getQuantityRequested()) {
-        System.out.println("❌ Inventario insuficiente");
-        System.out.println("   Tienes: " + disponible);
-        System.out.println("   Necesitas: " + oferta.getQuantityRequested());
-        return;
-    }
-    // 3. Llamar a ClienteBolsa para aceptar
     cliente.aceptarOferta(offerId);
-
-    System.out.println("✅ Oferta aceptada correctamente.");
-}
+  }
 
   private static void printHelp() {
     System.out.println("\n📚 AYUDA COMPLETA - Comandos del Trading Bot");
@@ -534,5 +593,10 @@ private static void handleAceptarOferta(String[] parts, ConectorBolsa connector,
 
       // TODO: Implement reconnection logic
     }
+
+      @Override
+      public void onGlobalPerformanceReport(GlobalPerformanceReportMessage globalPerformanceReportMessage) {
+
+      }
   }
 }
