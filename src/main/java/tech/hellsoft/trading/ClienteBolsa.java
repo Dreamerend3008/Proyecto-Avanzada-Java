@@ -98,6 +98,10 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onFill(FillMessage fill){
+        if (fill==null){
+            return;
+        }
+
         Product producto = fill.getProduct();
         int cantidad = fill.getFillQty();
         double precio = fill.getFillPrice();
@@ -150,6 +154,11 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onOffer(OfferMessage offer) {
+        // lo guardamos para ser procesado
+        estado.getOfertasPendientes().put(offer.getOfferId(), offer);
+        if(!listener){
+            return;
+        }
         System.out.println("Offer recibido");
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("De: "+offer.getBuyer());
@@ -160,8 +169,6 @@ public class ClienteBolsa implements EventListener {
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("💡 Usa 'aceptar " + offer.getOfferId() + "para aceptar");
         System.out.println();
-        // lo guardamos para ser procesado
-        estado.getOfertasPendientes().put(offer.getOfferId(), offer);
     }
 
     @Override
@@ -218,6 +225,9 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onBalanceUpdate(BalanceUpdateMessage balanceUpdateMessage) {
+        if(balanceUpdateMessage==null){
+            return;
+        }
         estado.setSaldo(balanceUpdateMessage.getBalance());
     }
 
