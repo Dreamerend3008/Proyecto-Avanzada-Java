@@ -34,9 +34,7 @@ public class ConsolaInteractiva {
         this.ejecutando = true;
     }
 
-    /**
-     * Inicia el loop principal de la consola.
-     */
+    // Loop principal de la consola interactiva
     public void iniciar() {
         while (ejecutando) {
             if(listenerActivo) {
@@ -70,17 +68,26 @@ public class ConsolaInteractiva {
         System.out.println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("📋 COMANDOS DISPONIBLES:");
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        System.out.println("  listener            - Iniciar el listener de mercado");
-        System.out.println("  status              - Ver estado actual (saldo, P&L)");
-        System.out.println("  inventario          - Ver productos en inventario");
-        System.out.println("  precios             - Ver precios de mercado");
+        System.out.println("===========Configuración del Cliente==========");
+        System.out.println("  listener                        - Iniciar el listener de mercado");
+        System.out.println("  guardar <nombre del archivo>    - Guardar estado del cliente en binario");
+        System.out.println("  cargar  <nombre del archivo>    - Cargar estado del cliente desde binario");
+        System.out.println("=============================================");
+        System.out.println("===========Comandos de Información===========");
+        System.out.println("  status                          - Ver estado actual (saldo, P&L)");
+        System.out.println("  inventario                      - Ver productos en inventario");
+        System.out.println("  precios                         - Ver precios de mercado");
+        System.out.println("  ofertas                         - Ver ofertas pendientes");
+        System.out.println("  ayuda                           - Mostrar ayuda completa");
+        System.out.println("=============================================");
+        System.out.println("===========Comandos de Acción=================");
         System.out.println("  comprar <producto> <cantidad> [mensaje]");
         System.out.println("  vender <producto> <cantidad> [mensaje]");
         System.out.println("  producir <producto> <cantidad> <basico|premium>");
-        System.out.println("  ofertas             - Ver ofertas pendientes");
-        System.out.println("  aceptar <offerId>   - Aceptar una oferta");
-        System.out.println("  ayuda               - Mostrar ayuda completa");
-        System.out.println("  exit                - Salir del programa");
+        System.out.println("  aceptar <offerId>               - Aceptar una oferta");
+        System.out.println("=============================================");
+        System.out.println("===========Otros Comandos=====================");
+        System.out.println("  exit                            - Salir del programa");
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     }
 
@@ -89,10 +96,15 @@ public class ConsolaInteractiva {
                 case "listener":
                     handleListener();
                     break;
+                case "guardar":
+                    hanldeGuardar(parts);
+                    break;
+                case "cargar":
+                    handleCargar(parts);
+                    break;
                 case "status" :
                     handleStatus();
                     break;
-
                 case "inventario" :
                     handleInventario();
                     break;
@@ -137,14 +149,30 @@ public class ConsolaInteractiva {
             }
     }
 
-    // ========== COMANDOS DE COMPORTAMIENTO ==========
+
+
+    // ========== COMANDOS DE CONFIGURACION ==========
     private void handleListener() {
         System.out.println("========== INICIAR LISTENER DE MERCADO ==========");
         System.out.println("Comenzando a escuchar eventos del mercado...");
         cliente.activarListener();
         listenerActivo= true;
     }
-
+    private void hanldeGuardar(String[] parts) {
+        if(parts[1]== null) {
+            System.out.println("❌ Uso: Guardar <nombre del archivo>");
+            return;
+        }
+        SnapshotManager.guardarEstado(cliente.getEstado(), parts[1]);
+        System.out.println("✅ Estado guardado en " + parts[1]);
+    }
+    private void handleCargar(String[] parts) {
+        if(parts[1]== null) {
+            System.out.println("Uso: Cargar <nombre del archivo>");
+            return;
+        }
+        cliente.setEstado(SnapshotManager.cargarEstado(parts[1]));
+    }
     // ========== COMANDOS DE INFORMACIÓN ==========
 
     private void handleStatus() {
@@ -224,13 +252,8 @@ public class ConsolaInteractiva {
         for (Map.Entry<Product, Double> entry : precios.entrySet()) {
             Product producto = entry.getKey();
             double mid = entry.getValue();
-            double bid = mid * 0.98;
-            double ask = mid * 1.02;
-
-            System.out.printf("%s: $%.2f (bid: $%.2f, ask: $%.2f)%n",
-                    producto, mid, bid, ask);
+            System.out.printf(" - %s: $%.2f%n", producto, mid);
         }
-
         System.out.println();
     }
 

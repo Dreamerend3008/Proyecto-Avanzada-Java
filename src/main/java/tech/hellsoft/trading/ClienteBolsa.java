@@ -1,6 +1,7 @@
 package tech.hellsoft.trading;
 
 import java.util.HashMap;
+import lombok.Setter;
 import tech.hellsoft.trading.dto.client.AcceptOfferMessage;
 import tech.hellsoft.trading.dto.client.ProductionUpdateMessage;
 import tech.hellsoft.trading.dto.server.*;
@@ -21,12 +22,11 @@ import tech.hellsoft.trading.util.RecetaValidator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Getter;
-
-// Daiana si hizo su parte wujuuu
 public class ClienteBolsa implements EventListener {
     private ConectorBolsa conector;
     @Getter
-    private final EstadoCliente estado;
+    @Setter
+    private EstadoCliente estado;
     private final AtomicInteger orderIdCounter;
     private boolean listener;
 
@@ -38,57 +38,69 @@ public class ClienteBolsa implements EventListener {
     }
 
     @Override
-    public void onLoginOk(LoginOKMessage msg){
-        if(msg==null){
+    public void onLoginOk(LoginOKMessage msg) {
+        if (msg == null) {
             return;
         }
         System.out.println("LOGIN OK");
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-        // set initial balance onloginok i think is the like start func
+        // set initial values
         estado.setSaldo(msg.getInitialBalance());
         estado.setSaldoInicial(msg.getInitialBalance());
         estado.setNombreEquipo(msg.getTeam());
-        estado.setInventario(msg.getInventory());
-        if(msg.getRole() != null ){
-            Rol rol = new Rol(
-                    msg.getRole().getBranches(),
-                    msg.getRole().getMaxDepth(),
-                    msg.getRole().getDecay(),
-                    msg.getRole().getBaseEnergy(),
-                    msg.getRole().getLevelEnergy()
-            );
-            estado.setRol(rol);
-            System.out.println("Rol configurado: "+rol);
-        } else {
-            // Set default role if not provided by server
-            Rol defaultRol = new Rol(2, 3, 0.9, 100.0, 10.0);
-            estado.setRol(defaultRol);
-            System.out.println("Rol por defecto configurado (servidor no envió rol completo)");
-        }
 
+        HashMap<Product, Integer> inventarioInicial = new HashMap<>(msg.getInventory());
+        estado.setInventario(inventarioInicial);
 
-        if(msg.getAuthorizedProducts() != null){
+        Rol rol = new Rol(
+                msg.getRole().getBranches(),
+                msg.getRole().getMaxDepth(),
+                msg.getRole().getDecay(),
+                msg.getRole().getBaseEnergy(),
+                msg.getRole().getLevelEnergy()
+        );
+        estado.setRol(rol);
+        if (msg.getAuthorizedProducts() != null) {
             estado.setProductosAutorizados(msg.getAuthorizedProducts());
-            System.out.println("Productos autorizados: "+msg.getAuthorizedProducts());
+            System.out.println("Productos autorizados: " + msg.getAuthorizedProducts());
         }
+        Map<Product, Recipe> r = msg.getRecipes();
+        Map<Product, Receta> recetasMapeadas = new HashMap<>();
+        for (Map.Entry<Product, Recipe> entry : r.entrySet()) {
+            Receta receta = new Receta(
+                    entry.getKey(),
+                    entry.getValue().getIngredients(),
+                    entry.getValue().getPremiumBonus()
+            );
+            recetasMapeadas.put(entry.getKey(), receta);
+            System.out.println("Receta cargada: " + receta);
+        }
+        // cargar el resto de las recetas en hardcode
 
-        if(msg.getRecipes() != null){
-            Map<Product, Recipe> r = msg.getRecipes();
-            Map<Product, Receta> recetasMapeadas = new HashMap<>();
-            for(Map.Entry<Product, Recipe> entry : r.entrySet()){
-                Receta receta = new Receta(
-                        entry.getKey(),
-                        entry.getValue().getIngredients(),
-                        entry.getValue().getPremiumBonus()
-                );
-                recetasMapeadas.put(entry.getKey(), receta);
-                System.out.println("Receta cargada: "+receta);
-                // cargar el resto de las recetas en hardcode
-            }
-            estado.setRecetas(recetasMapeadas);
-            System.out.println("Cantidad de recetas recibidas: "+msg.getRecipes().size());
-        }
+        // PREMIUM 1
+        Receta rec = new Receta(
+                Product.GUACA,
+                new HashMap<>(Map.of(
+                        Product.FOSFO, 5,
+                        Product.PITA, 3
+                )),
+                1.3
+        );
+        recetasMapeadas.put(Product.GUACA, rec);
+
+        // PREMIUM 2
+        Receta rec2 = new Receta(
+                Product.SEBO,
+                new HashMap<>(Map.of(
+                        Product.NUCREM, 8
+                )),
+                1.3
+        );
+        recetasMapeadas.put(Product.SEBO, rec2);
+        estado.setRecetas(recetasMapeadas);
+
+        System.out.println("Cantidad de recetas recibidas: " + msg.getRecipes().size());
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("Saldo inicial: "+estado.getSaldoInicial());
         System.out.println("Equipo: "+estado.getNombreEquipo());
@@ -98,36 +110,39 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onFill(FillMessage fill){
-        if (fill==null){
-            return;
-        }
+            if (fill==null){
+                return;
+            }
 
-        Product producto = fill.getProduct();
-        int cantidad = fill.getFillQty();
-        double precio = fill.getFillPrice();
-        String lado = fill.getSide().toString();
-        double monto = cantidad * precio;
+            Product producto = fill.getProduct();
+            int cantidad = fill.getFillQty();
+            double precio = fill.getFillPrice();
+            String lado = fill.getSide().getValue();
+            double monto = cantidad * precio;
 
-        if("BUY".equalsIgnoreCase(lado)){
-            estado.setSaldo(estado.getSaldo() - monto);
-            Map<Product, Integer> inventario = estado.getInventario();
-            int cantidadActual = inventario.getOrDefault(producto, 0);
-            inventario.put(producto, cantidadActual + cantidad);
-            System.out.println("Compra realizada: " + cantidad + " unidades de " + producto );
-        } else if ("SELL".equalsIgnoreCase(lado)) {
-            // falta esta logica ppero esto me dio la ia
-            estado.setSaldo(estado.getSaldo() + monto);
-            Map<Product, Integer> inventario = estado.getInventario();
-            int cantidadActual = inventario.getOrDefault(producto, 0);
-            inventario.put(producto, cantidadActual - cantidad);
-            System.out.println("Venta realizada: " + cantidad + " unidades de " + producto);
+            if("BUY".equalsIgnoreCase(lado)){
+                estado.setSaldo(estado.getSaldo() - monto);
+                estado.actualizarInventario(producto, cantidad);
+                System.out.println("Compra realizada: " + cantidad + " unidades de " + producto );
+            } else if ("SELL".equalsIgnoreCase(lado)) {
+                // checkeo para saber si se puede restar del inventario
+                int cantidadActual = estado.getInventario().getOrDefault(producto, 0);
+                if(cantidadActual-cantidad < 0){
+                    System.out.println("⚠️ Advertencia: Inventario negativo para " + producto);
+                    System.out.println("Verificar el estado de la cuenta con el del servidor");
+                    return;
+                }
+                estado.setSaldo(estado.getSaldo() + monto);
+                estado.actualizarInventario(producto, -cantidad);
+                System.out.println("Venta realizada: " + cantidad + " unidades de " + producto);
+            }
+            // mostrar info del fill
+            if(listener){
+                System.out.println("✅ FILL recibido: " + fill.getSide() + " " + fill.getFillQty() + " " + fill.getProduct() + " @ $"
+                        + fill.getFillPrice());
+                System.out.println();
+            }
         }
-        if(listener){
-            System.out.println("✅ FILL recibido: " + fill.getSide() + " " + fill.getFillQty() + " " + fill.getProduct() + " @ $"
-                    + fill.getFillPrice());
-            System.out.println();
-        }
-    }
     @Override
     public void onTicker(TickerMessage ticker) {
         if(ticker == null){
@@ -137,19 +152,20 @@ public class ClienteBolsa implements EventListener {
         if(producto == null){
             return;
         }
-        Double precio = 0.0;
+        Double precio = 1000000000000000000.0;
         if(ticker.getBestBid() != null){
             precio = ticker.getBestBid();
         }
 
         estado.getPreciosActuales().put(producto, precio);
 
-        if(listener) {
-            System.out.println("📊 TICKER: " + producto +
-                    " | Bid: $" + ticker.getBestBid() +
-                    " | Ask: $" + ticker.getBestAsk() +
-                    " | Mid: $" + ticker.getMid());
+        if(!listener) {
+            return;
         }
+        System.out.println("📊 TICKER: " + producto +
+                " | Bid: $" + ticker.getBestBid() +
+                " | Ask: $" + ticker.getBestAsk() +
+                " | Mid: $" + ticker.getMid());
     }
 
     @Override
@@ -212,6 +228,7 @@ public class ClienteBolsa implements EventListener {
     @Override
     public void onOrderAck(OrderAckMessage orderAckMessage) {
         if(listener){
+            System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             System.out.println("Orden Aceptada por el Servidor: " + orderAckMessage.getClOrdID());
             System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             System.out.println();
@@ -220,7 +237,11 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onInventoryUpdate(InventoryUpdateMessage inventoryUpdateMessage) {
-        estado.setInventario(inventoryUpdateMessage.getInventory());
+        if(inventoryUpdateMessage==null){
+            return;
+        }
+        HashMap <Product, Integer> inventarioActualizado = new HashMap<>(estado.getInventario());
+        estado.setInventario(inventarioActualizado);
     }
 
     @Override

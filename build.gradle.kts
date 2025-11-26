@@ -9,6 +9,8 @@ plugins {
 group = "tech.hellsoft"
 version = "1.0-SNAPSHOT"
 
+
+// configura java exec para que reciba como input la consola
 tasks.withType<JavaExec> {
     standardInput = System.`in`
 }
@@ -26,7 +28,7 @@ repositories {
 
 dependencies {
     // Hellsoft SDK - Ready when available
-    implementation("tech.hellsoft.trading:websocket-client:1.1.4")
+    implementation("tech.hellsoft.trading:websocket-client:1.1.5")
     
     // GSON for JSON processing
     implementation("com.google.code.gson:gson:2.10.1")

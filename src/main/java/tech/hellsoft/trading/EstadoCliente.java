@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import lombok.Getter;
+import lombok.Setter;
 import tech.hellsoft.trading.dto.server.OfferMessage;
 import tech.hellsoft.trading.enums.Product;
 import tech.hellsoft.trading.model.Receta;
@@ -14,16 +15,25 @@ import tech.hellsoft.trading.model.Rol;
 public class EstadoCliente implements Serializable {
     private static final long serialVersionUID = 1L;
     // variables de uso
-    @Getter
+    @Getter @Setter // otra manera de construir getters y setters
     private double saldo;
+    @Getter @Setter
     private double saldoInicial;
+    @Getter @Setter
     private Map<Product, Integer> inventario;
+    @Getter @Setter
     private Map<Product, Double> preciosActuales;
-    private Map<Product, Receta> recetas; // Mapa de recetas por nombre
+    @Getter @Setter
+    private Map<Product, Receta> recetas;
+    @Getter @Setter
     private Map<String, OfferMessage> ofertasPendientes;
+    @Getter @Setter
     private Rol rol; // Rol del cliente
+    @Getter @Setter
     private List<Product> productosAutorizados;
+    @Getter @Setter
     private String nombreEquipo;
+    @Getter @Setter
     private long timestampSnapshot;
 
     // rellenar constructor
@@ -62,84 +72,7 @@ public class EstadoCliente implements Serializable {
         }
         return valorInventario;
     }
-
-    public long getTimestampSnapshot() {
-        return timestampSnapshot;
-    }
-
-    public void setTimestampSnapshot(long timestampSnapshot) {
-        this.timestampSnapshot = timestampSnapshot;
-    }
-
-    public String getNombreEquipo() {
-        return nombreEquipo;
-    }
-
-    public void setNombreEquipo(String nombreEquipo) {
-        this.nombreEquipo = nombreEquipo;
-    }
-
-    public List<Product> getProductosAutorizados() {
-        return productosAutorizados;
-    }
-
-    public void setProductosAutorizados(List<Product> productosAutorizados) {
-        this.productosAutorizados = productosAutorizados;
-    }
-
-    public Rol getRol() {
-        return rol;
-    }
-
-    public void setRol(Rol rol) {
-        this.rol = rol;
-    }
-
-    public Map<Product, Receta> getRecetas() {
-        return recetas;
-    }
-
-    public void setRecetas(Map<Product, Receta> recetas) {
-        this.recetas = recetas;
-    }
-
-    public Map<Product, Double> getPreciosActuales() {
-        return preciosActuales;
-    }
-
-    public void setPreciosActuales(Map<Product, Double> preciosActuales) {
-        this.preciosActuales = preciosActuales;
-    }
-
-    public Map<Product, Integer> getInventario() {
-        return inventario;
-    }
-
-    public void setInventario(Map<Product, Integer> inventario) {
-        this.inventario = inventario;
-    }
-
-    public double getSaldoInicial() {
-        return saldoInicial;
-    }
-
-    public void setSaldoInicial(double saldoInicial) {
-        this.saldoInicial = saldoInicial;
-    }
-
-    public void setSaldo(double saldo) {
-        this.saldo = saldo;
-    }
-
-    public Map<String, OfferMessage> getOfertasPendientes() {
-        return ofertasPendientes;
-    }
-
-    public void setOfertasPendientes(Map<String, OfferMessage> ofertasPendientes) {
-        this.ofertasPendientes = ofertasPendientes;
-    }
-
-    public double getSaldo() {
-        return saldo;
+    public void actualizarInventario(Product producto, int cantidad) {
+        inventario.put(producto, inventario.getOrDefault(producto, 0) + cantidad);
     }
 }
