@@ -28,11 +28,13 @@ public class ClienteBolsa implements EventListener {
     @Getter
     private final EstadoCliente estado;
     private final AtomicInteger orderIdCounter;
+    private boolean listener;
 
     public ClienteBolsa(ConectorBolsa conector) {
         this.conector = conector;
         this.estado = new EstadoCliente();
         this.orderIdCounter = new AtomicInteger(0);
+        this.listener = false;
     }
 
     @Override
@@ -96,8 +98,6 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onFill(FillMessage fill){
-        System.out.println("Fill recibido");
-        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         Product producto = fill.getProduct();
         int cantidad = fill.getFillQty();
         double precio = fill.getFillPrice();
@@ -118,9 +118,11 @@ public class ClienteBolsa implements EventListener {
             inventario.put(producto, cantidadActual - cantidad);
             System.out.println("Venta realizada: " + cantidad + " unidades de " + producto);
         }
-        System.out.println("Nuevo saldo: $" + String.format("%.2f", estado.getSaldo()));
-        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        System.out.println();
+        if(listener){
+            System.out.println("✅ FILL recibido: " + fill.getSide() + " " + fill.getFillQty() + " " + fill.getProduct() + " @ $"
+                    + fill.getFillPrice());
+            System.out.println();
+        }
     }
     @Override
     public void onTicker(TickerMessage ticker) {
@@ -137,6 +139,13 @@ public class ClienteBolsa implements EventListener {
         }
 
         estado.getPreciosActuales().put(producto, precio);
+
+        if(listener) {
+            System.out.println("📊 TICKER: " + producto +
+                    " | Bid: $" + ticker.getBestBid() +
+                    " | Ask: $" + ticker.getBestAsk() +
+                    " | Mid: $" + ticker.getMid());
+        }
     }
 
     @Override
@@ -153,7 +162,6 @@ public class ClienteBolsa implements EventListener {
         System.out.println();
         // lo guardamos para ser procesado
         estado.getOfertasPendientes().put(offer.getOfferId(), offer);
-
     }
 
     @Override
@@ -196,7 +204,11 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onOrderAck(OrderAckMessage orderAckMessage) {
-
+        if(listener){
+            System.out.println("Orden Aceptada por el Servidor: " + orderAckMessage.getClOrdID());
+            System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            System.out.println();
+        }
     }
 
     @Override
@@ -206,7 +218,7 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onBalanceUpdate(BalanceUpdateMessage balanceUpdateMessage) {
-
+        estado.setSaldo(balanceUpdateMessage.getBalance());
     }
 
     @Override
@@ -226,7 +238,9 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onGlobalPerformanceReport(GlobalPerformanceReportMessage globalPerformanceReportMessage) {
-
+        if(listener){
+            // implementar muestra de info
+        }
     }
 
     // metodos NUESTROS MUAJAJAJAJ
@@ -366,5 +380,13 @@ public class ClienteBolsa implements EventListener {
                 .build();
         conector.enviarRespuestaOferta(respuesta);
         estado.getOfertasPendientes().remove(offerId);
+    }
+
+    public void activarListener() {
+        listener=true;
+    }
+
+    public void desactivarListener() {
+        listener=false;
     }
 }

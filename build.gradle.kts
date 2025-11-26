@@ -9,6 +9,9 @@ plugins {
 group = "tech.hellsoft"
 version = "1.0-SNAPSHOT"
 
+tasks.withType<JavaExec> {
+    standardInput = System.`in`
+}
 repositories {
     mavenCentral()
     maven {
