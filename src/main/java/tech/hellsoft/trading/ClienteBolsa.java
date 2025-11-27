@@ -1,5 +1,6 @@
 package tech.hellsoft.trading;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import lombok.Setter;
 import tech.hellsoft.trading.dto.client.AcceptOfferMessage;
@@ -13,10 +14,13 @@ import tech.hellsoft.trading.enums.Product;
 import tech.hellsoft.trading.exception.produccion.IngredientesInsuficientesException;
 import tech.hellsoft.trading.exception.produccion.RecetaNoEncontradaException;
 import tech.hellsoft.trading.exception.trading.InventarioInsuficienteException;
+import tech.hellsoft.trading.exception.trading.OfertaExpiradaException;
+import tech.hellsoft.trading.exception.trading.PrecioNoDisponibleException;
 import tech.hellsoft.trading.exception.trading.ProductoNoAutorizadoException;
 import tech.hellsoft.trading.exception.trading.SaldoInsuficienteException;
 import tech.hellsoft.trading.model.Receta;
 import tech.hellsoft.trading.model.Rol;
+import tech.hellsoft.trading.util.AutoProductor;
 import tech.hellsoft.trading.util.CalculadoraProduccion;
 import tech.hellsoft.trading.util.OrderIdGenerator;
 import tech.hellsoft.trading.util.RecetaValidator;
@@ -28,16 +32,15 @@ import static java.lang.Double.parseDouble;
 
 public class ClienteBolsa implements EventListener {
     private ConectorBolsa conector;
-    @Getter
-    @Setter
+    @Getter @Setter
     private EstadoCliente estado;
-    private final AtomicInteger orderIdCounter;
+    private AutoProductor  autoProductor;
+    private String autoProductorId;
     private boolean listener;
     OrderIdGenerator orderIdGenerator;
     public ClienteBolsa(ConectorBolsa conector) {
         this.conector = conector;
         this.estado = new EstadoCliente();
-        this.orderIdCounter = new AtomicInteger(0);
         this.listener = false;
         this.orderIdGenerator = new OrderIdGenerator("salchipapa-");
     }
@@ -100,9 +103,6 @@ public class ClienteBolsa implements EventListener {
         );
         recetasMapeadas.put(Product.SEBO, rec2);
         estado.setRecetas(recetasMapeadas);
-        if(!listener) {
-            return;
-        }
         System.out.println("✅ LOGIN EXITOSO!");
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("Equipo: " + msg.getTeam());
@@ -149,6 +149,7 @@ public class ClienteBolsa implements EventListener {
                 System.out.println();
             }
         }
+
     @Override
     public void onTicker(TickerMessage ticker) {
         if(ticker == null){
@@ -178,9 +179,9 @@ public class ClienteBolsa implements EventListener {
     public void onOffer(OfferMessage offer) {
         // lo guardamos para ser procesado
         estado.getOfertasPendientes().put(offer.getOfferId(), offer);
-        if(!listener){
-            //return;
-        }
+
+        System.out.println();
+        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("Offer recibido");
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("De: "+offer.getBuyer());
@@ -189,8 +190,10 @@ public class ClienteBolsa implements EventListener {
         System.out.println("Precio maximo: "+offer.getMaxPrice());
         System.out.println("Offer ID: "+offer.getOfferId());
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        System.out.println("💡 Usa 'aceptar " + offer.getOfferId() + "para aceptar");
+        System.out.println("Para aceptar la oferta, usa el comando:");
+        System.out.println("accept "+offer.getOfferId());
         System.out.println();
+        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     }
 
     @Override
@@ -265,7 +268,13 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onBroadcast(BroadcastNotificationMessage broadcastNotificationMessage) {
-
+        if(listener){
+            System.out.println("📢 BROADCAST DEL ADMINISTRADOR");
+            System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            System.out.println(broadcastNotificationMessage.getMessage());
+            System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            System.out.println();
+        }
     }
 
     @Override
@@ -275,23 +284,18 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onGlobalPerformanceReport(GlobalPerformanceReportMessage globalPerformanceReportMessage) {
-        if(listener){
-            // implementar muestra de info
-        }
+
     }
 
     // metodos NUESTROS MUAJAJAJAJ
 
-    public void comprar(Product producto, int cantidad, String mensaje) throws SaldoInsuficienteException {
+    public void comprar(Product producto, int cantidad, String mensaje) throws SaldoInsuficienteException, PrecioNoDisponibleException {
         if (cantidad <= 0) {
             throw new IllegalArgumentException("Las cantidades no pueden ser <= 0");
         }
         double precioEstimado = estado.getPreciosActuales().getOrDefault(producto, 0.0);
         if (precioEstimado < 0) {
-            System.err.println("⚠️ Precio no disponible para " + producto +
-                    ". Esperando ticker...");
-            precioEstimado = 0.0;
-            return;
+            throw new PrecioNoDisponibleException(producto);
         }
         double costoEstimado = cantidad * precioEstimado;
         if (estado.getSaldo() < costoEstimado) {
@@ -358,13 +362,16 @@ public class ClienteBolsa implements EventListener {
             throw new ProductoNoAutorizadoException(producto, estado.getProductosAutorizados());
         }
 
-        // obtener la receta
-        Receta receta = estado.getRecetas().get(producto);
-        if(receta == null) {
-            throw new RecetaNoEncontradaException(receta);
-        }
+
+        int cantidad = CalculadoraProduccion.calcularUnidades(estado.getRol());
 
         if(premium){
+            Receta receta = estado.getRecetas().get(producto);
+
+            if(receta == null){
+                throw new RecetaNoEncontradaException(receta);
+            }
+
             if(!RecetaValidator.puedeProducir(receta, estado.getInventario())){
                 throw new IngredientesInsuficientesException(
                         receta.getIngredientes(),
@@ -372,11 +379,6 @@ public class ClienteBolsa implements EventListener {
                 );
             }
             RecetaValidator.consumirIngredientes(receta, estado.getInventario());
-            System.out.println("Ingredientes consumidos: " + receta.getIngredientes());
-        }
-
-        int cantidad = CalculadoraProduccion.calcularUnidades(estado.getRol());
-        if (premium && receta.isPremium()) {
             cantidad = CalculadoraProduccion.aplicarBonusPremium(cantidad, receta.getBonusPremium());
         }
 
@@ -386,35 +388,35 @@ public class ClienteBolsa implements EventListener {
 
         int cantidadActual = estado.getInventario().getOrDefault(producto, 0);
         estado.getInventario().put(producto, cantidadActual + cantidad);
-        System.out.println("✅ Producción realizada: " + cantidad + " unidades de " + producto);
     }
 
-    /*public void autoProducir(){
-        // probar primero si puedo producir premium
-        // vamos a hardcodear las recetas premium
-        try {
-            Receta recetaSebo = estado.getRecetas().get(Product.SEBO);
-            Receta recetaGuaca = estado.getRecetas().get(Product.GUACA);
-            if (RecetaValidator.puedeProducir(recetaGuaca, estado.getInventario())) {
-                producir(Product.GUACA, true);
-                return;
-            }
-            if (RecetaValidator.puedeProducir(recetaGuaca, estado.getInventario())) {
-                producir(Product.PALTA_OIL, false);
-                return;
-            }
-            // si no puedo premium, producir basico
-            producir(Product.PALTA_OIL, false);
-        } catch (ProductoNoAutorizadoException | RecetaNoEncontradaException | IngredientesInsuficientesException e) {
-            System.err.println("❌ Error al auto-producir: " + e.getMessage());
+    public void iniciarAutoProductor(){
+        if(autoProductor != null){
+            System.out.println("⚠️ AutoProductor ya está en ejecución");
+            return;
         }
-    }*/
+        autoProductor = new AutoProductor(this);
+        conector.registrarTarea(autoProductor);
+        autoProductorId = autoProductor.getAutoProductorId();
+    }
 
-    public void aceptarOferta(String offerId){
+    public void pararAutoProductor(){
+        if(autoProductorId == null){
+            return;
+        }
+        conector.detenerTarea(autoProductorId);
+        autoProductor = null;
+    }
+
+    public void aceptarOferta(String offerId) throws OfertaExpiradaException {
         OfferMessage oferta = estado.getOfertasPendientes().get(offerId);
         if (oferta == null) {
             System.err.println("❌ Oferta no encontrada: " + offerId);
             return;
+        }
+        if(oferta.getExpiresIn() <= 0) {
+            // revisar si funciona
+            throw new OfertaExpiradaException(offerId);
         }
 
         int disponible = estado.getInventario().getOrDefault(oferta.getProduct(), 0);

@@ -20,18 +20,22 @@ public final class Main {
 
     static void main(String[] args) {
     try {
-      // 1. Load configuration (apiKey, team, host)
+      // 1. carga la configuración (apiKey, team, host)
       Configuration config = ConfigLoader.load("src/main/resources/config.json");
 
-      // 2. Create ClienteBolsa
+      // 2. Create ConectorBolsa
       ConectorBolsa connector = new ConectorBolsa();
+
+      // 3. Create ClienteBolsa
       ClienteBolsa cliente = new ClienteBolsa(connector);
+
+      // 3.1 Agregar listener
       connector.addListener(cliente);
 
-      // 3. Connect to server
+      // 4. Conectar al servidor
       connector.conectar(config.host(), config.apiKey());
 
-      // 4. Start interactive console
+      // 5. Iniciamos la consola interactiva
       ConsolaInteractiva consola = new ConsolaInteractiva(cliente);
       consola.iniciar();
 

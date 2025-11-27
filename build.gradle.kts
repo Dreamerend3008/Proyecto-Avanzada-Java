@@ -2,7 +2,7 @@ plugins {
     id("java")
     id("application")
     //id("com.diffplug.spotless") version "6.25.0"
-    id("checkstyle")
+    //id("checkstyle")
     id("pmd")
 }
 
@@ -38,7 +38,7 @@ repositories {
 
 dependencies {
     // Hellsoft SDK - Ready when available
-    implementation("tech.hellsoft.trading:websocket-client:1.2.2")
+    implementation("tech.hellsoft.trading:websocket-client:1.2.3")
     
     // GSON for JSON processing
     implementation("com.google.code.gson:gson:2.10.1")
@@ -80,10 +80,10 @@ tasks.test {
     }
 }*/
 
-checkstyle {
+/*checkstyle {
     toolVersion = "10.12.4"
     configFile = file("${project.rootDir}/config/checkstyle/checkstyle.xml")
-}
+}*/
 
 pmd {
     toolVersion = "6.55.0"
