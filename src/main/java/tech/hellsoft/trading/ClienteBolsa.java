@@ -1,6 +1,7 @@
 package tech.hellsoft.trading;
 
 import java.util.HashMap;
+import lombok.Setter;
 import tech.hellsoft.trading.dto.client.AcceptOfferMessage;
 import tech.hellsoft.trading.dto.client.ProductionUpdateMessage;
 import tech.hellsoft.trading.dto.server.*;
@@ -17,76 +18,95 @@ import tech.hellsoft.trading.exception.trading.SaldoInsuficienteException;
 import tech.hellsoft.trading.model.Receta;
 import tech.hellsoft.trading.model.Rol;
 import tech.hellsoft.trading.util.CalculadoraProduccion;
+import tech.hellsoft.trading.util.OrderIdGenerator;
 import tech.hellsoft.trading.util.RecetaValidator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Getter;
 
-// Daiana si hizo su parte wujuuu
+import static java.lang.Double.parseDouble;
+
 public class ClienteBolsa implements EventListener {
     private ConectorBolsa conector;
     @Getter
-    private final EstadoCliente estado;
+    @Setter
+    private EstadoCliente estado;
     private final AtomicInteger orderIdCounter;
-
+    private boolean listener;
+    OrderIdGenerator orderIdGenerator;
     public ClienteBolsa(ConectorBolsa conector) {
         this.conector = conector;
         this.estado = new EstadoCliente();
         this.orderIdCounter = new AtomicInteger(0);
+        this.listener = false;
+        this.orderIdGenerator = new OrderIdGenerator("salchipapa-");
     }
 
     @Override
-    public void onLoginOk(LoginOKMessage msg){
-        if(msg==null){
+    public void onLoginOk(LoginOKMessage msg) {
+        if (msg == null) {
             return;
         }
-        System.out.println("LOGIN OK");
-        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-        // set initial balance onloginok i think is the like start func
+        // set initial values
         estado.setSaldo(msg.getInitialBalance());
         estado.setSaldoInicial(msg.getInitialBalance());
         estado.setNombreEquipo(msg.getTeam());
-        estado.setInventario(msg.getInventory());
-        if(msg.getRole() != null ){
-            Rol rol = new Rol(
-                    msg.getRole().getBranches(),
-                    msg.getRole().getMaxDepth(),
-                    msg.getRole().getDecay(),
-                    msg.getRole().getBaseEnergy(),
-                    msg.getRole().getLevelEnergy()
-            );
-            estado.setRol(rol);
-            System.out.println("Rol configurado: "+rol);
-        } else {
-            // Set default role if not provided by server
-            Rol defaultRol = new Rol(2, 3, 0.9, 100.0, 10.0);
-            estado.setRol(defaultRol);
-            System.out.println("Rol por defecto configurado (servidor no envió rol completo)");
-        }
 
+        HashMap<Product, Integer> inventarioInicial = new HashMap<>(msg.getInventory());
+        estado.setInventario(inventarioInicial);
 
-        if(msg.getAuthorizedProducts() != null){
+        Rol rol = new Rol(
+                msg.getRole().getBranches(),
+                msg.getRole().getMaxDepth(),
+                msg.getRole().getDecay(),
+                msg.getRole().getBaseEnergy(),
+                msg.getRole().getLevelEnergy()
+        );
+        estado.setRol(rol);
+        if (msg.getAuthorizedProducts() != null) {
             estado.setProductosAutorizados(msg.getAuthorizedProducts());
-            System.out.println("Productos autorizados: "+msg.getAuthorizedProducts());
         }
+        Map<Product, Recipe> r = msg.getRecipes();
+        Map<Product, Receta> recetasMapeadas = new HashMap<>();
+        for (Map.Entry<Product, Recipe> entry : r.entrySet()) {
+            Receta receta = new Receta(
+                    entry.getKey(),
+                    entry.getValue().getIngredients(),
+                    entry.getValue().getPremiumBonus()
+            );
+            recetasMapeadas.put(entry.getKey(), receta);
+        }
+        // cargar el resto de las recetas en hardcode
 
-        if(msg.getRecipes() != null){
-            Map<Product, Recipe> r = msg.getRecipes();
-            Map<Product, Receta> recetasMapeadas = new HashMap<>();
-            for(Map.Entry<Product, Recipe> entry : r.entrySet()){
-                Receta receta = new Receta(
-                        entry.getKey(),
-                        entry.getValue().getIngredients(),
-                        entry.getValue().getPremiumBonus()
-                );
-                recetasMapeadas.put(entry.getKey(), receta);
-                System.out.println("Receta cargada: "+receta);
-                // cargar el resto de las recetas en hardcode
-            }
-            estado.setRecetas(recetasMapeadas);
-            System.out.println("Cantidad de recetas recibidas: "+msg.getRecipes().size());
+        // PREMIUM 1
+        Receta rec = new Receta(
+                Product.GUACA,
+                new HashMap<>(Map.of(
+                        Product.FOSFO, 5,
+                        Product.PITA, 3
+                )),
+                1.3
+        );
+        recetasMapeadas.put(Product.GUACA, rec);
+
+        // PREMIUM 2
+        Receta rec2 = new Receta(
+                Product.SEBO,
+                new HashMap<>(Map.of(
+                        Product.NUCREM, 8
+                )),
+                1.3
+        );
+        recetasMapeadas.put(Product.SEBO, rec2);
+        estado.setRecetas(recetasMapeadas);
+        if(!listener) {
+            return;
         }
+        System.out.println("✅ LOGIN EXITOSO!");
+        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        System.out.println("Equipo: " + msg.getTeam());
+        System.out.println("Cantidad de recetas recibidas: " + msg.getRecipes().size());
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("Saldo inicial: "+estado.getSaldoInicial());
         System.out.println("Equipo: "+estado.getNombreEquipo());
@@ -96,32 +116,39 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onFill(FillMessage fill){
-        System.out.println("Fill recibido");
-        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        Product producto = fill.getProduct();
-        int cantidad = fill.getFillQty();
-        double precio = fill.getFillPrice();
-        String lado = fill.getSide().toString();
-        double monto = cantidad * precio;
+            if (fill==null){
+                return;
+            }
 
-        if("BUY".equalsIgnoreCase(lado)){
-            estado.setSaldo(estado.getSaldo() - monto);
-            Map<Product, Integer> inventario = estado.getInventario();
-            int cantidadActual = inventario.getOrDefault(producto, 0);
-            inventario.put(producto, cantidadActual + cantidad);
-            System.out.println("Compra realizada: " + cantidad + " unidades de " + producto );
-        } else if ("SELL".equalsIgnoreCase(lado)) {
-            // falta esta logica ppero esto me dio la ia
-            estado.setSaldo(estado.getSaldo() + monto);
-            Map<Product, Integer> inventario = estado.getInventario();
-            int cantidadActual = inventario.getOrDefault(producto, 0);
-            inventario.put(producto, cantidadActual - cantidad);
-            System.out.println("Venta realizada: " + cantidad + " unidades de " + producto);
+            Product producto = fill.getProduct();
+            int cantidad = fill.getFillQty();
+            double precio = fill.getFillPrice();
+            String lado = fill.getSide().getValue();
+            double monto = cantidad * precio;
+
+            if("BUY".equalsIgnoreCase(lado)){
+                estado.setSaldo(estado.getSaldo() - monto);
+                estado.actualizarInventario(producto, cantidad);
+                System.out.println("Compra realizada: " + cantidad + " unidades de " + producto );
+            } else if ("SELL".equalsIgnoreCase(lado)) {
+                // checkeo para saber si se puede restar del inventario
+                int cantidadActual = estado.getInventario().getOrDefault(producto, 0);
+                if(cantidadActual-cantidad < 0){
+                    System.out.println("⚠️ Advertencia: Inventario negativo para " + producto);
+                    System.out.println("Verificar el estado de la cuenta con el del servidor");
+                    return;
+                }
+                estado.setSaldo(estado.getSaldo() + monto);
+                estado.actualizarInventario(producto, -cantidad);
+                System.out.println("Venta realizada: " + cantidad + " unidades de " + producto);
+            }
+            // mostrar info del fill
+            if(listener){
+                System.out.println("✅ FILL recibido: " + fill.getSide() + " " + fill.getFillQty() + " " + fill.getProduct() + " @ $"
+                        + fill.getFillPrice());
+                System.out.println();
+            }
         }
-        System.out.println("Nuevo saldo: $" + String.format("%.2f", estado.getSaldo()));
-        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        System.out.println();
-    }
     @Override
     public void onTicker(TickerMessage ticker) {
         if(ticker == null){
@@ -137,10 +164,23 @@ public class ClienteBolsa implements EventListener {
         }
 
         estado.getPreciosActuales().put(producto, precio);
+
+        if(!listener) {
+            return;
+        }
+        System.out.println("📊 TICKER: " + producto +
+                " | Bid: $" + ticker.getBestBid() +
+                " | Ask: $" + ticker.getBestAsk() +
+                " | Mid: $" + ticker.getMid());
     }
 
     @Override
     public void onOffer(OfferMessage offer) {
+        // lo guardamos para ser procesado
+        estado.getOfertasPendientes().put(offer.getOfferId(), offer);
+        if(!listener){
+            //return;
+        }
         System.out.println("Offer recibido");
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("De: "+offer.getBuyer());
@@ -151,9 +191,6 @@ public class ClienteBolsa implements EventListener {
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("💡 Usa 'aceptar " + offer.getOfferId() + "para aceptar");
         System.out.println();
-        // lo guardamos para ser procesado
-        estado.getOfertasPendientes().put(offer.getOfferId(), offer);
-
     }
 
     @Override
@@ -196,17 +233,29 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onOrderAck(OrderAckMessage orderAckMessage) {
-
+        if(listener){
+            System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            System.out.println("Orden Aceptada por el Servidor: " + orderAckMessage.getClOrdID());
+            System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            System.out.println();
+        }
     }
 
     @Override
     public void onInventoryUpdate(InventoryUpdateMessage inventoryUpdateMessage) {
-        estado.setInventario(inventoryUpdateMessage.getInventory());
+        if(inventoryUpdateMessage==null){
+            return;
+        }
+        HashMap <Product, Integer> inventarioActualizado = new HashMap<>(estado.getInventario());
+        estado.setInventario(inventarioActualizado);
     }
 
     @Override
     public void onBalanceUpdate(BalanceUpdateMessage balanceUpdateMessage) {
-
+        if(balanceUpdateMessage==null){
+            return;
+        }
+        estado.setSaldo(balanceUpdateMessage.getBalance());
     }
 
     @Override
@@ -226,7 +275,9 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onGlobalPerformanceReport(GlobalPerformanceReportMessage globalPerformanceReportMessage) {
-
+        if(listener){
+            // implementar muestra de info
+        }
     }
 
     // metodos NUESTROS MUAJAJAJAJ
@@ -236,28 +287,25 @@ public class ClienteBolsa implements EventListener {
             throw new IllegalArgumentException("Las cantidades no pueden ser <= 0");
         }
         double precioEstimado = estado.getPreciosActuales().getOrDefault(producto, 0.0);
-        if (precioEstimado <= 0) {
+        if (precioEstimado < 0) {
             System.err.println("⚠️ Precio no disponible para " + producto +
                     ". Esperando ticker...");
-            precioEstimado = 100000000000000000000.0;
+            precioEstimado = 0.0;
+            return;
         }
-
         double costoEstimado = cantidad * precioEstimado;
-
         if (estado.getSaldo() < costoEstimado) {
             throw new SaldoInsuficienteException(estado.getSaldo(), costoEstimado);
         }
 
         // crear orden
-        String orderId = "ORD-" + orderIdCounter.getAndIncrement();
+        String orderId = orderIdGenerator.next();
         OrderMode orderMode = OrderMode.MARKET;
         Double limitPrice = null;
-
-        if(mensaje.equalsIgnoreCase("LIMIT")){
+        if(mensaje != null){
             orderMode = OrderMode.LIMIT;
-            limitPrice = precioEstimado * 1.02; // 2% sobre el precio de mercado
+            limitPrice = parseDouble(mensaje);
         }
-
         OrderMessage orden = OrderMessage.builder()
                 .clOrdID(orderId)
                 .side(OrderSide.BUY)
@@ -266,7 +314,6 @@ public class ClienteBolsa implements EventListener {
                 .mode(orderMode)
                 .limitPrice(limitPrice)
                 .build();
-
         conector.enviarOrden(orden);
         System.out.println("✅ Orden de compra enviada: " + cantidad + " unidades de " + producto);
     }
@@ -282,14 +329,13 @@ public class ClienteBolsa implements EventListener {
         }
 
         // crear orden
-        String orderId = "ORD-" + orderIdCounter.getAndIncrement();
+        String orderId = orderIdGenerator.next();
         OrderMode orderMode = OrderMode.MARKET;
         Double limitPrice = null;
 
-        if(mensaje != null && mensaje.equalsIgnoreCase("Limit")){
+        if(mensaje != null && !mensaje.trim().isEmpty()){
             orderMode = OrderMode.LIMIT;
-            double precioEstimado = estado.getPreciosActuales().getOrDefault(producto, 0.0);
-            limitPrice = precioEstimado * 0.98; // 2% bajo el precio de mercado
+            limitPrice = parseDouble(mensaje);
         }
 
         OrderMessage orden = OrderMessage.builder()
@@ -334,7 +380,6 @@ public class ClienteBolsa implements EventListener {
             cantidad = CalculadoraProduccion.aplicarBonusPremium(cantidad, receta.getBonusPremium());
         }
 
-
         // enviar al servidor produccion basica
         ProductionUpdateMessage p = new ProductionUpdateMessage(MessageType.PRODUCTION_UPDATE, producto, cantidad);
         conector.enviarActualizacionProduccion(p);
@@ -343,6 +388,27 @@ public class ClienteBolsa implements EventListener {
         estado.getInventario().put(producto, cantidadActual + cantidad);
         System.out.println("✅ Producción realizada: " + cantidad + " unidades de " + producto);
     }
+
+    /*public void autoProducir(){
+        // probar primero si puedo producir premium
+        // vamos a hardcodear las recetas premium
+        try {
+            Receta recetaSebo = estado.getRecetas().get(Product.SEBO);
+            Receta recetaGuaca = estado.getRecetas().get(Product.GUACA);
+            if (RecetaValidator.puedeProducir(recetaGuaca, estado.getInventario())) {
+                producir(Product.GUACA, true);
+                return;
+            }
+            if (RecetaValidator.puedeProducir(recetaGuaca, estado.getInventario())) {
+                producir(Product.PALTA_OIL, false);
+                return;
+            }
+            // si no puedo premium, producir basico
+            producir(Product.PALTA_OIL, false);
+        } catch (ProductoNoAutorizadoException | RecetaNoEncontradaException | IngredientesInsuficientesException e) {
+            System.err.println("❌ Error al auto-producir: " + e.getMessage());
+        }
+    }*/
 
     public void aceptarOferta(String offerId){
         OfferMessage oferta = estado.getOfertasPendientes().get(offerId);
@@ -366,5 +432,13 @@ public class ClienteBolsa implements EventListener {
                 .build();
         conector.enviarRespuestaOferta(respuesta);
         estado.getOfertasPendientes().remove(offerId);
+    }
+
+    public void activarListener() {
+        listener=true;
+    }
+
+    public void desactivarListener() {
+        listener=false;
     }
 }
