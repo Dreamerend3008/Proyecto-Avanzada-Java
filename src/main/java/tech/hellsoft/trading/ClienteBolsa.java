@@ -18,10 +18,14 @@ import tech.hellsoft.trading.exception.trading.SaldoInsuficienteException;
 import tech.hellsoft.trading.model.Receta;
 import tech.hellsoft.trading.model.Rol;
 import tech.hellsoft.trading.util.CalculadoraProduccion;
+import tech.hellsoft.trading.util.OrderIdGenerator;
 import tech.hellsoft.trading.util.RecetaValidator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Getter;
+
+import static java.lang.Double.parseDouble;
+
 public class ClienteBolsa implements EventListener {
     private ConectorBolsa conector;
     @Getter
@@ -29,12 +33,13 @@ public class ClienteBolsa implements EventListener {
     private EstadoCliente estado;
     private final AtomicInteger orderIdCounter;
     private boolean listener;
-
+    OrderIdGenerator orderIdGenerator;
     public ClienteBolsa(ConectorBolsa conector) {
         this.conector = conector;
         this.estado = new EstadoCliente();
         this.orderIdCounter = new AtomicInteger(0);
         this.listener = false;
+        this.orderIdGenerator = new OrderIdGenerator("salchipapa-");
     }
 
     @Override
@@ -152,7 +157,7 @@ public class ClienteBolsa implements EventListener {
         if(producto == null){
             return;
         }
-        Double precio = 1000000000000000000.0;
+        Double precio = 0.0;
         if(ticker.getBestBid() != null){
             precio = ticker.getBestBid();
         }
@@ -173,7 +178,7 @@ public class ClienteBolsa implements EventListener {
         // lo guardamos para ser procesado
         estado.getOfertasPendientes().put(offer.getOfferId(), offer);
         if(!listener){
-            return;
+            //return;
         }
         System.out.println("Offer recibido");
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -281,28 +286,25 @@ public class ClienteBolsa implements EventListener {
             throw new IllegalArgumentException("Las cantidades no pueden ser <= 0");
         }
         double precioEstimado = estado.getPreciosActuales().getOrDefault(producto, 0.0);
-        if (precioEstimado <= 0) {
+        if (precioEstimado < 0) {
             System.err.println("⚠️ Precio no disponible para " + producto +
                     ". Esperando ticker...");
-            precioEstimado = 100000000000000000000.0;
+            precioEstimado = 0.0;
+            return;
         }
-
         double costoEstimado = cantidad * precioEstimado;
-
         if (estado.getSaldo() < costoEstimado) {
             throw new SaldoInsuficienteException(estado.getSaldo(), costoEstimado);
         }
 
         // crear orden
-        String orderId = "ORD-" + orderIdCounter.getAndIncrement();
+        String orderId = orderIdGenerator.next();
         OrderMode orderMode = OrderMode.MARKET;
         Double limitPrice = null;
-
-        if(mensaje.equalsIgnoreCase("LIMIT")){
+        if(mensaje != null){
             orderMode = OrderMode.LIMIT;
-            limitPrice = precioEstimado * 1.02; // 2% sobre el precio de mercado
+            limitPrice = parseDouble(mensaje);
         }
-
         OrderMessage orden = OrderMessage.builder()
                 .clOrdID(orderId)
                 .side(OrderSide.BUY)
@@ -311,7 +313,6 @@ public class ClienteBolsa implements EventListener {
                 .mode(orderMode)
                 .limitPrice(limitPrice)
                 .build();
-
         conector.enviarOrden(orden);
         System.out.println("✅ Orden de compra enviada: " + cantidad + " unidades de " + producto);
     }
@@ -327,14 +328,13 @@ public class ClienteBolsa implements EventListener {
         }
 
         // crear orden
-        String orderId = "ORD-" + orderIdCounter.getAndIncrement();
+        String orderId = orderIdGenerator.next();
         OrderMode orderMode = OrderMode.MARKET;
         Double limitPrice = null;
 
-        if(mensaje != null && mensaje.equalsIgnoreCase("Limit")){
+        if(mensaje != null && !mensaje.trim().isEmpty()){
             orderMode = OrderMode.LIMIT;
-            double precioEstimado = estado.getPreciosActuales().getOrDefault(producto, 0.0);
-            limitPrice = precioEstimado * 0.98; // 2% bajo el precio de mercado
+            limitPrice = parseDouble(mensaje);
         }
 
         OrderMessage orden = OrderMessage.builder()
@@ -378,7 +378,6 @@ public class ClienteBolsa implements EventListener {
         if (premium && receta.isPremium()) {
             cantidad = CalculadoraProduccion.aplicarBonusPremium(cantidad, receta.getBonusPremium());
         }
-
 
         // enviar al servidor produccion basica
         ProductionUpdateMessage p = new ProductionUpdateMessage(MessageType.PRODUCTION_UPDATE, producto, cantidad);

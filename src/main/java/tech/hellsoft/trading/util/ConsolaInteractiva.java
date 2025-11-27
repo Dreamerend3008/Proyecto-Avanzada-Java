@@ -81,9 +81,9 @@ public class ConsolaInteractiva {
         System.out.println("  ayuda                           - Mostrar ayuda completa");
         System.out.println("=============================================");
         System.out.println("===========Comandos de Acción=================");
-        System.out.println("  comprar <producto> <cantidad> [mensaje]");
-        System.out.println("  vender <producto> <cantidad> [mensaje]");
-        System.out.println("  producir <producto> <cantidad> <basico|premium>");
+        System.out.println("  comprar <producto> <cantidad> [PRECIO] - Si no pones precio se toma el valor market");
+        System.out.println("  vender <producto> <cantidad> [PRECIO]  - Si no pones precio se toma el valor market");
+        System.out.println("  producir <producto> <basico|premium>");
         System.out.println("  aceptar <offerId>               - Aceptar una oferta");
         System.out.println("=============================================");
         System.out.println("===========Otros Comandos=====================");
@@ -317,7 +317,7 @@ public class ConsolaInteractiva {
 
     private void handleComprar(String[] parts) {
         if (parts.length < 3) {
-            System.out.println("❌ Uso: comprar <producto> <cantidad> [mensaje]");
+            System.out.println("❌ Uso: comprar <producto> <cantidad> [PRECIO]");
             return;
         }
 
@@ -325,10 +325,11 @@ public class ConsolaInteractiva {
             Product producto = Product.valueOf(parts[1]);
             int cantidad = Integer.parseInt(parts[2]);
 
-            // puede ser MARKET o LIMIT
-            String mensaje = parts.length > 3
-                    ? String.join(" ", java.util.Arrays.copyOfRange(parts, 3, parts.length))
-                    : "MARKET";
+            // si el mensaje viene con algo mas lo mandamos como mensaje de lo contrario null
+            String mensaje = null;
+            if (parts.length > 3) {
+                mensaje = parts[3];
+            }
             cliente.comprar(producto, cantidad, mensaje);
 
         } catch (NumberFormatException e) {
@@ -343,7 +344,7 @@ public class ConsolaInteractiva {
 
     private void handleVender(String[] parts) {
         if (parts.length < 3) {
-            System.out.println("❌ Uso: vender <producto> <cantidad> [mensaje]");
+            System.out.println("❌ Uso: vender <producto> <cantidad> [PRECIO]");
             return;
         }
 
@@ -352,9 +353,10 @@ public class ConsolaInteractiva {
             int cantidad = Integer.parseInt(parts[2]);
 
             // revisar esto porque debe ser cooherente con el marketlimit etc
-            String mensaje = parts.length > 3
-                    ? String.join(" ", java.util.Arrays.copyOfRange(parts, 3, parts.length))
-                    : "";
+            String mensaje = null;
+            if (parts.length > 3) {
+                mensaje = parts[3];
+            }
 
             cliente.vender(producto, cantidad, mensaje);
 
@@ -369,76 +371,20 @@ public class ConsolaInteractiva {
     }
 
     private void handleProducir(String[] parts) {
-        if (parts.length < 4) {
-            System.out.println("❌ Uso: producir <producto> <cantidad> <basico|premium>");
+        if (parts.length < 2) {
+            System.out.println("❌ Uso: producir <producto>");
             return;
         }
 
         try {
             Product producto = Product.valueOf(parts[1]);
-
-            int cantidadDeseada = Integer.parseInt(parts[2]);
-            String tipo = parts[3].toLowerCase();
-            boolean premium = tipo.equals("premium");
-
-            if (cantidadDeseada <= 0) {
-                System.out.println("❌ La cantidad debe ser mayor que 0");
+            if(producto != Product.GUACA && producto != Product.PALTA_OIL && producto != Product.SEBO) {
+                System.out.println("❌ Solo se pueden producir GUACA, PALTA-OIL o SEBO");
                 return;
             }
-
-            // Calculate how many times we need to produce
-            EstadoCliente estado = cliente.getEstado();
-            Receta receta = estado.getRecetas().get(producto);
-            if (receta == null) {
-                System.out.println("❌ Receta no encontrada para " + producto);
-                return;
-            }
-
-            int unidadesPorProduccion = CalculadoraProduccion.calcularUnidades(estado.getRol());
-            if (premium && receta.isPremium()) {
-                unidadesPorProduccion = CalculadoraProduccion.aplicarBonusPremium(
-                        unidadesPorProduccion,
-                        receta.getBonusPremium()
-                );
-            }
-
-            // Calculate number of production cycles needed
-            int ciclosNecesarios = (int) Math.ceil((double) cantidadDeseada / unidadesPorProduccion);
-            System.out.printf("📊 Se necesitan %d ciclos de producción para %d unidades%n",
-                    ciclosNecesarios, cantidadDeseada);
-            System.out.printf("   (%d unidades por ciclo)%n", unidadesPorProduccion);
-
-            // If premium, validate ingredients for all cycles
-            if (premium) {
-                Map<Product, Integer> ingredientesTotales = new HashMap<>();
-                for (Map.Entry<Product, Integer> entry : receta.getIngredientes().entrySet()) {
-                    ingredientesTotales.put(entry.getKey(), entry.getValue() * ciclosNecesarios);
-                }
-
-                // Check if we have enough ingredients
-                for (Map.Entry<Product, Integer> entry : ingredientesTotales.entrySet()) {
-                    Product ingrediente = entry.getKey();
-                    int necesario = entry.getValue();
-                    int disponible = estado.getInventario().getOrDefault(ingrediente, 0);
-
-                    if (disponible < necesario) {
-                        System.out.printf("❌ Ingredientes insuficientes para %d ciclos%n", ciclosNecesarios);
-                        System.out.printf("   %s: necesitas %d, tienes %d%n",
-                                ingrediente, necesario, disponible);
-                        return;
-                    }
-                }
-            }
-
-            // Produce the requested cycles
-            int totalProducido = 0;
-            for (int i = 0; i < ciclosNecesarios; i++) {
-                cliente.producir(producto, premium);
-                totalProducido += unidadesPorProduccion;
-            }
-
-            System.out.printf("✅ Producción completada: %d unidades de %s (%s)%n",
-                    totalProducido, producto, premium ? "premium" : "básico");
+            boolean premium = false;
+            if(producto == Product.GUACA || producto == Product.SEBO) premium = true;
+            cliente.producir(producto, premium);
 
         } catch (NumberFormatException e) {
             System.out.println("❌ Cantidad inválida");
