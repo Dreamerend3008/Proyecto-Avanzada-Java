@@ -1,6 +1,6 @@
 package tech.hellsoft.trading.exception.configuracion;
 
-public class ConfiguracionException extends RuntimeException {
+public abstract class ConfiguracionException extends RuntimeException {
     public ConfiguracionException(String mensaje) {
         super(mensaje);
     }

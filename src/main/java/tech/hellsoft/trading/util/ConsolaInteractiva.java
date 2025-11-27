@@ -20,13 +20,14 @@ public class ConsolaInteractiva {
 
     private final ClienteBolsa cliente;
     private final Scanner scanner;
-    private volatile boolean ejecutando;
-    private boolean listenerActivo = false;
+    private boolean ejecutando; // borre el volatile si falla terminal es por eso xdd
+    private boolean listenerActivo;
 
     public ConsolaInteractiva(ClienteBolsa cliente) {
         this.cliente = cliente;
         this.scanner = new Scanner(System.in);
         this.ejecutando = true;
+        this.listenerActivo = false;
     }
 
     // Loop principal de la consola interactiva
@@ -38,7 +39,7 @@ public class ConsolaInteractiva {
                 // Modo listener activo - esperar comando para salir
                 mostrarModoListener();
 
-                if (!scanner.hasNextLine()) {
+                if (!scanner.hasNextLine()) { // seguridad cuando lees input (lo tenia el profe originalmente)
                     break;
                 }
 
@@ -52,19 +53,18 @@ public class ConsolaInteractiva {
             printMenu();
             System.out.print("┌─[Comando]─► ");
 
-            if (!scanner.hasNextLine()) {
+            if (!scanner.hasNextLine()) { // seguridad cuando lees input (lo tenia el profe originalmente)
                 break;
             }
 
-            String input = scanner.nextLine().trim();
+            String input = scanner.nextLine().trim(); // trim para eliminar espacios iniciales y finales
 
             if (input.isEmpty()) {
                 continue;
             }
 
-            String[] parts = input.split("\\s+");
+            String[] parts = input.split("\\s+"); // divide el input por espacios
             String command = parts[0].toLowerCase();
-
             handleCommand(command, parts);
         }
         scanner.close();
@@ -72,7 +72,8 @@ public class ConsolaInteractiva {
     }
 
     private void mostrarModoListener() {
-        System.out.println("\n╔════════════════════════════════════════════════════════════╗");
+        System.out.println();
+        System.out.println("╔════════════════════════════════════════════════════════════╗");
         System.out.println("║           🎧 MODO LISTENER ACTIVO                          ║");
         System.out.println("╚════════════════════════════════════════════════════════════╝");
         System.out.println("  ▶️  Escuchando eventos del mercado en tiempo real...");
@@ -92,12 +93,12 @@ public class ConsolaInteractiva {
     }
 
     private void printWelcomeBanner() {
-        clearScreen();
+        System.out.println();
         System.out.println("╔════════════════════════════════════════════════════════════╗");
         System.out.println("║                                                            ║");
-        System.out.println("║            🚀 SPACIAL TRADING BOT 🚀                      ║");
+        System.out.println("║            🚀 SPACIAL TRADING BOT 🚀                       ║");
         System.out.println("║                                                            ║");
-        System.out.println("║            Bienvenido al Sistema de Trading               ║");
+        System.out.println("║            Bienvenido al Sistema de Trading                ║");
         System.out.println("║                                                            ║");
         System.out.println("╚════════════════════════════════════════════════════════════╝");
         System.out.println();
@@ -113,62 +114,31 @@ public class ConsolaInteractiva {
         System.out.println("╚════════════════════════════════════════════════════════════╝");
     }
 
-    private void clearScreen() {
-        // metodo para limpiar la consola
-        try {
-            if (System.getProperty("os.name").contains("Windows")) {
-                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-            } else {
-                System.out.print("\033[H\033[2J");
-                System.out.flush();
-            }
-        } catch (Exception e) {
-            // If clear doesn't work, just print some newlines
-            for (int i = 0; i < 50; i++) {
-                System.out.println();
-            }
-        }
-    }
-
     private void printMenu() {
         System.out.println();
-        System.out.println("╔════════════════════════════════════════════════════════════╗");
-        System.out.println("║                  📋 COMANDOS DISPONIBLES                   ║");
-        System.out.println("╚════════════════════════════════════════════════════════════╝");
+        System.out.println("╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗");
+        System.out.println("║                                                   📋 COMANDOS DISPONIBLES                                                      ║");
+        System.out.println("╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝");
         System.out.println();
-        System.out.println("┌─────────────────────────────────────────────────────────────┐");
-        System.out.println("│  ⚙️  CONFIGURACIÓN DEL CLIENTE                              │");
-        System.out.println("├─────────────────────────────────────────────────────────────┤");
-        System.out.println("│  • listener                      → Iniciar listener         │");
-        System.out.println("│  • guardar <archivo>             → Guardar estado           │");
-        System.out.println("│  • cargar <archivo>              → Cargar estado            │");
-        System.out.println("└─────────────────────────────────────────────────────────────┘");
+        System.out.println("┌──────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────┐");
+        System.out.println("│  ⚙️  CONFIGURACIÓN                                   │  📊 INFORMACIÓN                                                     │");
+        System.out.println("├──────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────┤");
+        System.out.println("│  • listener       → Iniciar listener                 │  • status       → Estado y P&L    • inventario  → Productos         │");
+        System.out.println("│  • guardar <arch> → Guardar estado                   │  • precios      → Precios         • ofertas     → Ofertas           │");
+        System.out.println("│  • cargar <arch>  → Cargar estado                    │                                                                     │");
+        System.out.println("└──────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────┘");
         System.out.println();
-        System.out.println("┌─────────────────────────────────────────────────────────────┐");
-        System.out.println("│  📊 INFORMACIÓN                                             │");
-        System.out.println("├─────────────────────────────────────────────────────────────┤");
-        System.out.println("│  • status                        → Estado actual y P&L      │");
-        System.out.println("│  • inventario                    → Productos disponibles    │");
-        System.out.println("│  • precios                       → Precios de mercado       │");
-        System.out.println("│  • ofertas                       → Ofertas pendientes       │");
-        System.out.println("└─────────────────────────────────────────────────────────────┘");
+        System.out.println("┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐");
+        System.out.println("│  💼 TRADING Y PRODUCCIÓN                                                                                                    │");
+        System.out.println("├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤");
+        System.out.println("│  • comprar <producto> <cant> [precio] → Comprar     • vender <producto> <cant> [precio] → Vender                            │");
+        System.out.println("│  • producir <producto>                → Producir    • aceptar <offerId>                 → Aceptar oferta                    │");
+        System.out.println("│  • auto                               → Auto prod.  • autos                             → Parar auto                        │");
+        System.out.println("└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘");
         System.out.println();
-        System.out.println("┌─────────────────────────────────────────────────────────────┐");
-        System.out.println("│  💼 TRADING Y PRODUCCIÓN                                    │");
-        System.out.println("├─────────────────────────────────────────────────────────────┤");
-        System.out.println("│  • comprar <producto> <cant> [precio]  → Comprar producto   │");
-        System.out.println("│  • vender <producto> <cant> [precio]   → Vender producto    │");
-        System.out.println("│  • producir <producto> <basico|premium> → Producir          │");
-        System.out.println("│  • aceptar <offerId>             → Aceptar oferta           │");
-        System.out.println("│  • auto <tiempo>                 → Producir auto            │");
-        System.out.println("└─────────────────────────────────────────────────────────────┘");
-        System.out.println();
-        System.out.println("┌─────────────────────────────────────────────────────────────┐");
-        System.out.println("│  ℹ️  AYUDA                                                  │");
-        System.out.println("├─────────────────────────────────────────────────────────────┤");
-        System.out.println("│  • ayuda                         → Mostrar ayuda completa   │");
-        System.out.println("│  • exit                          → Salir del programa       │");
-        System.out.println("└─────────────────────────────────────────────────────────────┘");
+        System.out.println("┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐");
+        System.out.println("│  ℹ️  AYUDA: ayuda/help → Guía completa  |  exit/quit/salir → Salir                                                          │");
+        System.out.println("└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘");
     }
 
     private void handleCommand(String command, String[] parts) {
@@ -212,7 +182,12 @@ public class ConsolaInteractiva {
                 case "aceptar" :
                     handleAceptarOferta(parts);
                     break;
-
+                case "auto"  :
+                    cliente.iniciarAutoProductor();
+                    break;
+                case "autos"  :
+                    cliente.pararAutoProductor();
+                    break;
                 case "ayuda" :
                 case "help" :
                     printHelp();
@@ -242,6 +217,7 @@ public class ConsolaInteractiva {
         cliente.activarListener();
         listenerActivo= true;
     }
+
     private void hanldeGuardar(String[] parts) {
         if(parts.length < 2 || parts[1] == null) {
             System.out.println("❌ Uso: guardar <nombre_archivo>");
@@ -252,6 +228,7 @@ public class ConsolaInteractiva {
         System.out.println("✅ Estado guardado exitosamente en: " + parts[1]);
         System.out.println();
     }
+
     private void handleCargar(String[] parts) {
         if(parts.length < 2 || parts[1] == null) {
             System.out.println("❌ Uso: cargar <nombre_archivo>");
@@ -589,10 +566,6 @@ public class ConsolaInteractiva {
         cliente.aceptarOferta(offerId);
         System.out.println("✅ Oferta aceptada exitosamente");
         System.out.println();
-    }
-
-    public void detener() {
-        ejecutando = false;
     }
 }
 

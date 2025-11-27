@@ -3,6 +3,7 @@ package tech.hellsoft.trading.util;
 import tech.hellsoft.trading.EstadoCliente;
 
 import java.io.*;
+import tech.hellsoft.trading.exception.configuracion.SnapshotCorruptoException;
 
 public class SnapshotManager {
     // Guarda el estado del cliente en un archivo binario.
@@ -20,9 +21,8 @@ public class SnapshotManager {
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(ruta))) {
             EstadoCliente estado = (EstadoCliente) in.readObject();
             return estado;
-        } catch (IOException | ClassNotFoundException e) { // cambiar a SnapshotCorrupto
-            System.out.println("❌ Error al cargar el estado: " + e.getMessage());
-            return null;
+        } catch (IOException | ClassNotFoundException e) {
+            throw new SnapshotCorruptoException("Error al cargar el estado", e);
         }
     }
 }
