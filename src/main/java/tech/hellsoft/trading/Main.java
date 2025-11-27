@@ -16,20 +16,12 @@ import tech.hellsoft.trading.dto.server.EventDeltaMessage;
 import tech.hellsoft.trading.dto.server.BroadcastNotificationMessage;
 
 
-/**
- * CLI Trading Bot with interactive menu.
- * Students should implement the TODO methods below to complete the trading bot
- * functionality.
- */
 public final class Main {
 
     static void main(String[] args) {
     try {
       // 1. Load configuration (apiKey, team, host)
       Configuration config = ConfigLoader.load("src/main/resources/config.json");
-      printBanner();
-      System.out.println("🚀 Starting Trading Bot for team: " + config.team());
-      System.out.println();
 
       // 2. Create ClienteBolsa
       ConectorBolsa connector = new ConectorBolsa();
@@ -37,13 +29,10 @@ public final class Main {
       connector.addListener(cliente);
 
       // 3. Connect to server
-      System.out.println("🔌 Connecting to: " + config.host());
       connector.conectar(config.host(), config.apiKey());
-      System.out.println("✅ Connected! Waiting for login...");
-      System.out.println();
 
       // 4. Start interactive console
-      ConsolaInteractiva consola = new ConsolaInteractiva(cliente, connector);
+      ConsolaInteractiva consola = new ConsolaInteractiva(cliente);
       consola.iniciar();
 
     } catch (Exception e) {
@@ -53,14 +42,6 @@ public final class Main {
       }
       System.exit(1);
     }
-  }
-
-  private static void printBanner() {
-    System.out.println("╔══════════════════════════════════════════════════════════╗");
-    System.out.println("║  🥑 Bolsa Interestelar de Aguacates Andorianos 🥑      ║");
-    System.out.println("║  Trading Bot CLI - Java 25 Edition                      ║");
-    System.out.println("╚══════════════════════════════════════════════════════════╝");
-    System.out.println();
   }
 
 

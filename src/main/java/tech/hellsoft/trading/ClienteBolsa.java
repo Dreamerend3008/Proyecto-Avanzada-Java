@@ -47,8 +47,6 @@ public class ClienteBolsa implements EventListener {
         if (msg == null) {
             return;
         }
-        System.out.println("LOGIN OK");
-        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
         // set initial values
         estado.setSaldo(msg.getInitialBalance());
@@ -68,7 +66,6 @@ public class ClienteBolsa implements EventListener {
         estado.setRol(rol);
         if (msg.getAuthorizedProducts() != null) {
             estado.setProductosAutorizados(msg.getAuthorizedProducts());
-            System.out.println("Productos autorizados: " + msg.getAuthorizedProducts());
         }
         Map<Product, Recipe> r = msg.getRecipes();
         Map<Product, Receta> recetasMapeadas = new HashMap<>();
@@ -79,7 +76,6 @@ public class ClienteBolsa implements EventListener {
                     entry.getValue().getPremiumBonus()
             );
             recetasMapeadas.put(entry.getKey(), receta);
-            System.out.println("Receta cargada: " + receta);
         }
         // cargar el resto de las recetas en hardcode
 
@@ -104,7 +100,12 @@ public class ClienteBolsa implements EventListener {
         );
         recetasMapeadas.put(Product.SEBO, rec2);
         estado.setRecetas(recetasMapeadas);
-
+        if(!listener) {
+            return;
+        }
+        System.out.println("✅ LOGIN EXITOSO!");
+        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        System.out.println("Equipo: " + msg.getTeam());
         System.out.println("Cantidad de recetas recibidas: " + msg.getRecipes().size());
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("Saldo inicial: "+estado.getSaldoInicial());
@@ -387,6 +388,27 @@ public class ClienteBolsa implements EventListener {
         estado.getInventario().put(producto, cantidadActual + cantidad);
         System.out.println("✅ Producción realizada: " + cantidad + " unidades de " + producto);
     }
+
+    /*public void autoProducir(){
+        // probar primero si puedo producir premium
+        // vamos a hardcodear las recetas premium
+        try {
+            Receta recetaSebo = estado.getRecetas().get(Product.SEBO);
+            Receta recetaGuaca = estado.getRecetas().get(Product.GUACA);
+            if (RecetaValidator.puedeProducir(recetaGuaca, estado.getInventario())) {
+                producir(Product.GUACA, true);
+                return;
+            }
+            if (RecetaValidator.puedeProducir(recetaGuaca, estado.getInventario())) {
+                producir(Product.PALTA_OIL, false);
+                return;
+            }
+            // si no puedo premium, producir basico
+            producir(Product.PALTA_OIL, false);
+        } catch (ProductoNoAutorizadoException | RecetaNoEncontradaException | IngredientesInsuficientesException e) {
+            System.err.println("❌ Error al auto-producir: " + e.getMessage());
+        }
+    }*/
 
     public void aceptarOferta(String offerId){
         OfferMessage oferta = estado.getOfertasPendientes().get(offerId);

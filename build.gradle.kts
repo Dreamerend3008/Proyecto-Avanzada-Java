@@ -14,6 +14,16 @@ version = "1.0-SNAPSHOT"
 tasks.withType<JavaExec> {
     standardInput = System.`in`
 }
+
+// make it run quietly
+gradle.taskGraph.whenReady {
+    allTasks.forEach { task ->
+        if (task is JavaExec) {
+            task.logging.captureStandardOutput(LogLevel.QUIET)
+        }
+    }
+}
+
 repositories {
     mavenCentral()
     maven {
