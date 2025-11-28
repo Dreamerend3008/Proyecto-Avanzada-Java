@@ -41,7 +41,7 @@ public class AutoProductor extends TareaAutomatica {
                 return;
             }
             if (RecetaValidator.puedeProducir(recetaSebo, estado.getInventario())) {
-                cliente.producir(Product.SEBO, false);
+                cliente.producir(Product.SEBO, true);
                 return;
             }
             // si no puedo premium, producir basico

@@ -15,16 +15,12 @@ import tech.hellsoft.trading.exception.trading.InventarioInsuficienteException;
 import tech.hellsoft.trading.exception.trading.ProductoNoAutorizadoException;
 import tech.hellsoft.trading.exception.trading.SaldoInsuficienteException;
 
-/**
- * Consola interactiva para recibir comandos del usuario.
- * Implementa un REPL (Read-Eval-Print Loop) para controlar el bot de trading.
- */
 public class ConsolaInteractiva {
 
     private final ClienteBolsa cliente;
     private final ConectorBolsa conector;
     private final Scanner scanner;
-    private boolean ejecutando; // borre el volatile si falla terminal es por eso xdd
+    private boolean ejecutando;
     private boolean listenerActivo;
 
     public ConsolaInteractiva(ClienteBolsa cliente, ConectorBolsa conector) {
@@ -48,13 +44,14 @@ public class ConsolaInteractiva {
                     break;
                 }
 
-                String input = scanner.nextLine().trim();
+                String input = scanner.nextLine().trim(); // trim para eliminar espacios iniciales y finales
 
                 if ("salir".equalsIgnoreCase(input) || "exit".equalsIgnoreCase(input) || "menu".equalsIgnoreCase(input)) {
                     detenerListener();
                 }
                 continue;
             }
+
             printMenu();
             System.out.print("┌─[Comando]─► ");
 
@@ -87,12 +84,12 @@ public class ConsolaInteractiva {
     }
 
     private void detenerListener() {
+        cliente.desactivarListener();
+        listenerActivo = false;
         System.out.println("\n╔════════════════════════════════════════════════════════════╗");
         System.out.println("║           🔇 DESACTIVANDO LISTENER                         ║");
         System.out.println("╚════════════════════════════════════════════════════════════╝");
         System.out.println("  ⏹️  Deteniendo escucha de eventos...");
-        cliente.desactivarListener();
-        listenerActivo = false;
         System.out.println("  ✅ Listener desactivado - Regresando al menú principal");
         System.out.println();
     }
@@ -271,25 +268,18 @@ public class ConsolaInteractiva {
         double saldo = estado.getSaldo();
         double saldoInicial = estado.getSaldoInicial();
 
-        // Calculate inventory value
-        double valorInventario = 0.0;
-        for (Map.Entry<Product, Integer> entry : estado.getInventario().entrySet()) {
-            Product producto = entry.getKey();
-            int cantidad = entry.getValue();
-            double precio = estado.getPreciosActuales().getOrDefault(producto, 0.0);
-            valorInventario += cantidad * precio;
-        }
+        double valorInventario = cliente.getEstado().calcularValorInventario();
 
         double patrimonioNeto = saldo + valorInventario;
-        double pnl = saldoInicial > 0 ? ((patrimonioNeto - saldoInicial) / saldoInicial) * 100 : 0.0;
+        double pl = cliente.getEstado().calcularPL();
 
         System.out.println("\n┌─────────────────────────────────────────────────────────────┐");
         System.out.printf("│  💰 Saldo:                                  $%,14.2f │%n", saldo);
         System.out.printf("│  📦 Valor inventario:                       $%,14.2f │%n", valorInventario);
         System.out.println("├─────────────────────────────────────────────────────────────┤");
         System.out.printf("│  💎 Patrimonio neto:                        $%,14.2f │%n", patrimonioNeto);
-        String pnlIcon = pnl >= 0 ? "📈" : "📉";
-        System.out.printf("│  %s P&L:                                       %+7.2f%% │%n", pnlIcon, pnl);
+        String pnlIcon = pl >= 0 ? "📈" : "📉";
+        System.out.printf("│  %s P&L:                                       %+7.2f%% │%n", pnlIcon, pl);
         System.out.println("└─────────────────────────────────────────────────────────────┘");
         System.out.println();
     }
@@ -475,7 +465,6 @@ public class ConsolaInteractiva {
             Product producto = Product.valueOf(parts[1]);
             int cantidad = Integer.parseInt(parts[2]);
 
-            // si el mensaje viene con algo mas lo mandamos como mensaje de lo contrario null
             String mensaje = null;
             if (parts.length > 3) {
                 mensaje = parts[3];
@@ -599,4 +588,5 @@ public class ConsolaInteractiva {
         System.out.println();
     }
 }
+
 

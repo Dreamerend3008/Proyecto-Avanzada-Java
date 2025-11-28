@@ -4,6 +4,7 @@ package tech.hellsoft.trading.util;
 import tech.hellsoft.trading.model.Rol;
 
 public class CalculadoraProduccion {
+
     public static int calcularUnidades(Rol rol){
         return calcularRecursivo(0,rol);
     }
@@ -18,7 +19,7 @@ public class CalculadoraProduccion {
 
         int contribucion = (int) Math.round(energia * factor);
 
-        return contribucion+ calcularRecursivo(nivel+1,rol);
+        return contribucion + calcularRecursivo(nivel+1,rol);
     }
 
     public static int aplicarBonusPremium(int unidadesBase, double bonus){

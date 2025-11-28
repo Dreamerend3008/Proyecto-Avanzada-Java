@@ -33,8 +33,6 @@ public class EstadoCliente implements Serializable {
     private List<Product> productosAutorizados;
     @Getter @Setter
     private String nombreEquipo;
-    @Getter @Setter
-    private long timestampSnapshot;
 
     // rellenar constructor
     public EstadoCliente() {
@@ -46,9 +44,10 @@ public class EstadoCliente implements Serializable {
         this.saldo = 0.0;
         this.saldoInicial = 0.0;
         this.nombreEquipo = "";
-        this.timestampSnapshot = System.currentTimeMillis();
     }
+
     public double calcularPL(){
+        // profit and loss
         double valorInventario = 0.0;
         valorInventario = calcularValorInventario();
         double patrimonioNeto = saldo + valorInventario;
@@ -58,6 +57,7 @@ public class EstadoCliente implements Serializable {
         double pl = ((patrimonioNeto - saldoInicial) / saldoInicial) * 100;
         return pl;
     }
+
     public double calcularValorInventario(){
         double valorInventario = 0.0;
         for (Map.Entry<Product, Integer> entry : inventario.entrySet()) {
@@ -72,6 +72,7 @@ public class EstadoCliente implements Serializable {
         }
         return valorInventario;
     }
+
     public void actualizarInventario(Product producto, int cantidad) {
         inventario.put(producto, inventario.getOrDefault(producto, 0) + cantidad);
     }
