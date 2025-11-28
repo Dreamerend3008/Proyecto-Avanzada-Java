@@ -26,7 +26,7 @@ public class SnapshotManager {
         }
     }
     public static void listarSnapshots(){
-        File carpeta = new File("data/"); // cambia la ruta
+        File carpeta = new File("data/");
         File[] archivos = carpeta.listFiles();
         if (archivos != null) {
             for (File archivo : archivos) {

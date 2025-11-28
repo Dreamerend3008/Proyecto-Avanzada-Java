@@ -22,13 +22,13 @@ public final class Main {
     static void main(String[] args) {
     try {
 
-      // 2. Create ConectorBolsa
+      // 1. Crear ConectorBolsa
       ConectorBolsa connector = new ConectorBolsa();
 
-      // 3. Create ClienteBolsa
+      // 2. Create ClienteBolsa
       ClienteBolsa cliente = new ClienteBolsa(connector);
 
-      // 3.1 Agregar listener
+      // 3 Agregar listener
       connector.addListener(cliente);
 
       login(connector);
@@ -36,8 +36,6 @@ public final class Main {
       // 5. Iniciamos la consola interactiva
       ConsolaInteractiva consola = new ConsolaInteractiva(cliente, connector);
       consola.iniciar();
-
-
 
     } catch (Exception e) {
       System.err.println("❌ Error: " + e.getMessage());

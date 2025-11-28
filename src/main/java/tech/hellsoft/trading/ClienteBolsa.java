@@ -34,7 +34,7 @@ public class ClienteBolsa implements EventListener {
     private ConectorBolsa conector;
     @Getter @Setter
     private EstadoCliente estado;
-    private AutoProductor  autoProductor;
+    private AutoProductor autoProductor;
     private String autoProductorId;
     private boolean listener;
     OrderIdGenerator orderIdGenerator;
@@ -51,7 +51,7 @@ public class ClienteBolsa implements EventListener {
             return;
         }
 
-        // set initial values
+        // poner los valores iniciales
         estado.setSaldo(msg.getInitialBalance());
         estado.setSaldoInicial(msg.getInitialBalance());
         estado.setNombreEquipo(msg.getTeam());
@@ -191,7 +191,7 @@ public class ClienteBolsa implements EventListener {
         System.out.println("Offer ID: "+offer.getOfferId());
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("Para aceptar la oferta, usa el comando:");
-        System.out.println("accept "+offer.getOfferId());
+        System.out.println("aceptar "+offer.getOfferId());
         System.out.println();
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     }
@@ -204,34 +204,6 @@ public class ClienteBolsa implements EventListener {
         System.err.println("Razón: " + error.getReason());
         System.err.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.err.println();
-
-        // Manejar errores específicos
-        switch (error.getCode().getValue()) {
-            case "INVALID_TOKEN":
-                System.err.println("⚠️ Token inválido. Verifica config.json");
-                System.err.println("⚠️ Terminando programa...");
-                System.exit(1);
-                break;
-
-            case "INSUFFICIENT_BALANCE":
-                System.err.println("⚠️ BUG: Validación local de saldo falló");
-                break;
-
-            case "INSUFFICIENT_INVENTORY":
-                System.err.println("⚠️ BUG: Validación local de inventario falló");
-                break;
-
-            case "OFFER_EXPIRED":
-                System.err.println("💡 La oferta ya expiró. Responde más rápido.");
-                break;
-
-            case "RATE_LIMIT":
-                System.err.println("⚠️ Demasiadas órdenes por segundo. Espera un momento.");
-                break;
-
-            default:
-                System.err.println("💡 Error general del servidor");
-        }
     }
 
     @Override
@@ -249,7 +221,7 @@ public class ClienteBolsa implements EventListener {
         if(inventoryUpdateMessage==null){
             return;
         }
-        HashMap <Product, Integer> inventarioActualizado = new HashMap<>(estado.getInventario());
+        HashMap <Product, Integer> inventarioActualizado = new HashMap<>(inventoryUpdateMessage.getInventory());
         estado.setInventario(inventarioActualizado);
     }
 
@@ -293,7 +265,7 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onConnectionLost(Throwable throwable) {
-
+        System.out.println("❌ Conexión perdida con el servidor.");
     }
 
     @Override
@@ -376,7 +348,6 @@ public class ClienteBolsa implements EventListener {
             throw new ProductoNoAutorizadoException(producto, estado.getProductosAutorizados());
         }
 
-
         int cantidad = CalculadoraProduccion.calcularUnidades(estado.getRol());
 
         if(premium){
@@ -420,6 +391,7 @@ public class ClienteBolsa implements EventListener {
         }
         conector.detenerTarea(autoProductorId);
         autoProductor = null;
+
     }
 
     public void aceptarOferta(String offerId) throws OfertaExpiradaException {
