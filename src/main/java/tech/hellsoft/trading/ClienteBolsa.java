@@ -263,6 +263,20 @@ public class ClienteBolsa implements EventListener {
 
     @Override
     public void onEventDelta(EventDeltaMessage eventDeltaMessage) {
+        // no comprendi totalmente como llega este mensaje pero:
+        if(!listener){
+            return;
+        }
+        System.out.println("📢 EVENT DEL SERVIDOR");
+        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        System.out.println("Server Time: " + eventDeltaMessage.getServerTime());
+        System.out.println("Tipo de mensaje: " + eventDeltaMessage.getType());
+        for (FillMessage fill : eventDeltaMessage.getEvents()) {
+            System.out.println("✅ FILL: " + fill.getSide() + " " + fill.getFillQty() + " " + fill.getProduct() + " @ $"
+                    + fill.getFillPrice());
+        }
+        System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        System.out.println();
 
     }
 
