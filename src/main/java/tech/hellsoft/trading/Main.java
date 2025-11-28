@@ -1,6 +1,7 @@
 package tech.hellsoft.trading;
 
 import tech.hellsoft.trading.config.Configuration;
+import tech.hellsoft.trading.exception.ConexionFallidaException;
 import tech.hellsoft.trading.util.ConfigLoader;
 import tech.hellsoft.trading.util.ConsolaInteractiva;
 import tech.hellsoft.trading.dto.server.GlobalPerformanceReportMessage;
@@ -20,8 +21,6 @@ public final class Main {
 
     static void main(String[] args) {
     try {
-      // 1. carga la configuración (apiKey, team, host)
-      Configuration config = ConfigLoader.load("src/main/resources/config.json");
 
       // 2. Create ConectorBolsa
       ConectorBolsa connector = new ConectorBolsa();
@@ -32,12 +31,13 @@ public final class Main {
       // 3.1 Agregar listener
       connector.addListener(cliente);
 
-      // 4. Conectar al servidor
-      connector.conectar(config.host(), config.apiKey());
+      login(connector);
 
       // 5. Iniciamos la consola interactiva
-      ConsolaInteractiva consola = new ConsolaInteractiva(cliente);
+      ConsolaInteractiva consola = new ConsolaInteractiva(cliente, connector);
       consola.iniciar();
+
+
 
     } catch (Exception e) {
       System.err.println("❌ Error: " + e.getMessage());
@@ -48,6 +48,19 @@ public final class Main {
     }
   }
 
+  public static void login(ConectorBolsa connector) throws ConexionFallidaException {
+      // 1. carga la configuración (apiKey, team, host)
+      Configuration config = ConfigLoader.load("src/main/resources/config.json");
+
+      // 4. Conectar al servidor
+      try{
+          connector.conectar(config.host(), config.apiKey());
+      }catch (ConexionFallidaException e){
+            System.err.println(e.getMessage());
+            return;
+      }
+
+  }
 
   private static class MyTradingBot implements EventListener {
 

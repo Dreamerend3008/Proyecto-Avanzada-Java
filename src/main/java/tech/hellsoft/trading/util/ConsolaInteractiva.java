@@ -3,9 +3,12 @@ package tech.hellsoft.trading.util;
 import java.util.Map;
 import java.util.Scanner;
 import tech.hellsoft.trading.ClienteBolsa;
+import tech.hellsoft.trading.ConectorBolsa;
 import tech.hellsoft.trading.EstadoCliente;
+import tech.hellsoft.trading.Main;
 import tech.hellsoft.trading.dto.server.OfferMessage;
 import tech.hellsoft.trading.enums.Product;
+import tech.hellsoft.trading.exception.ConexionFallidaException;
 import tech.hellsoft.trading.exception.produccion.IngredientesInsuficientesException;
 import tech.hellsoft.trading.exception.produccion.RecetaNoEncontradaException;
 import tech.hellsoft.trading.exception.trading.InventarioInsuficienteException;
@@ -19,12 +22,14 @@ import tech.hellsoft.trading.exception.trading.SaldoInsuficienteException;
 public class ConsolaInteractiva {
 
     private final ClienteBolsa cliente;
+    private final ConectorBolsa conector;
     private final Scanner scanner;
     private boolean ejecutando; // borre el volatile si falla terminal es por eso xdd
     private boolean listenerActivo;
 
-    public ConsolaInteractiva(ClienteBolsa cliente) {
+    public ConsolaInteractiva(ClienteBolsa cliente, ConectorBolsa conector) {
         this.cliente = cliente;
+        this.conector = conector;
         this.scanner = new Scanner(System.in);
         this.ejecutando = true;
         this.listenerActivo = false;
@@ -124,7 +129,8 @@ public class ConsolaInteractiva {
         System.out.println("│  ⚙️  CONFIGURACIÓN                                   │  📊 INFORMACIÓN                                                     │");
         System.out.println("├──────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────┤");
         System.out.println("│  • listener       → Iniciar listener                 │  • status       → Estado y P&L    • inventario  → Productos         │");
-        System.out.println("│  • guardar <arch> → Guardar estado                   │  • precios      → Precios         • ofertas     → Ofertas           │");
+        System.out.println("│  • listar         → Mostrar snapshots disponibles    │  • precios      → Precios         • ofertas     → Ofertas           │");
+        System.out.println("│  • guardar <arch> → Guardar estado                   │                                                                     │");
         System.out.println("│  • cargar <arch>  → Cargar estado                    │                                                                     │");
         System.out.println("└──────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────┘");
         System.out.println();
@@ -141,10 +147,13 @@ public class ConsolaInteractiva {
         System.out.println("└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘");
     }
 
-    private void handleCommand(String command, String[] parts) {
+    private void handleCommand(String command, String[] parts){
             switch (command) {
                 case "listener":
                     handleListener();
+                    break;
+                case "listar":
+                    handleListar();
                     break;
                 case "guardar":
                     hanldeGuardar(parts);
@@ -188,6 +197,9 @@ public class ConsolaInteractiva {
                 case "autos"  :
                     cliente.pararAutoProductor();
                     break;
+                case "resync"  :
+                    handleResync();
+                    break;
                 case "ayuda" :
                 case "help" :
                     printHelp();
@@ -216,6 +228,15 @@ public class ConsolaInteractiva {
         System.out.println();
         cliente.activarListener();
         listenerActivo= true;
+    }
+
+    private void handleListar() {
+        System.out.println("╔════════════════════════════════════════════════════════════╗");
+        System.out.println("║               📂 SNAPSHOTS DE ESTADO DISPONIBLES           ║");
+        System.out.println("╚════════════════════════════════════════════════════════════╝");
+        System.out.println();
+        SnapshotManager.listarSnapshots();
+        System.out.println();
     }
 
     private void hanldeGuardar(String[] parts) {
@@ -430,6 +451,16 @@ public class ConsolaInteractiva {
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     }
 
+    private void handleResync(){
+        System.out.println();
+        System.out.println("🔄 Reconectando con el servidor...");
+        try {
+            Main.login(conector);
+        } catch (ConexionFallidaException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("✅ Reconexión exitosa");
+    }
     // ========== COMANDOS DE ACCIÓN ==========
 
     private void handleComprar(String[] parts) {

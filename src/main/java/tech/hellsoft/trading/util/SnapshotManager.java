@@ -25,4 +25,15 @@ public class SnapshotManager {
             throw new SnapshotCorruptoException("Error al cargar el estado", e);
         }
     }
+    public static void listarSnapshots(){
+        File carpeta = new File("data/"); // cambia la ruta
+        File[] archivos = carpeta.listFiles();
+        if (archivos != null) {
+            for (File archivo : archivos) {
+                System.out.println(archivo.getName());
+            }
+            return;
+        }
+        System.out.println("No se encontraron snapshots.");
+    }
 }
