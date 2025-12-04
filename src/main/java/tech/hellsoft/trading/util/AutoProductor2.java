@@ -4,6 +4,8 @@ import java.io.Serializable;
 import lombok.Getter;
 import tech.hellsoft.trading.ClienteBolsa;
 import tech.hellsoft.trading.EstadoCliente;
+import tech.hellsoft.trading.dto.client.ProductionUpdateMessage;
+import tech.hellsoft.trading.enums.MessageType;
 import tech.hellsoft.trading.enums.Product;
 import tech.hellsoft.trading.exception.produccion.IngredientesInsuficientesException;
 import tech.hellsoft.trading.exception.produccion.RecetaNoEncontradaException;
@@ -11,11 +13,11 @@ import tech.hellsoft.trading.exception.trading.ProductoNoAutorizadoException;
 import tech.hellsoft.trading.model.Receta;
 import tech.hellsoft.trading.tasks.TareaAutomatica;
 
-public class AutoProductor extends TareaAutomatica implements Serializable {
+public class AutoProductor2 extends TareaAutomatica implements Serializable {
     private ClienteBolsa cliente;
     @Getter
     String autoProductorId;
-    public AutoProductor(ClienteBolsa cliente) {
+    public AutoProductor2(ClienteBolsa cliente) {
         OrderIdGenerator ind = new OrderIdGenerator("AUTO-");
         String tmp = ind.next();
         this.autoProductorId = tmp;
@@ -26,7 +28,7 @@ public class AutoProductor extends TareaAutomatica implements Serializable {
     @Override
     protected void ejecutar() {
         try{
-            autoProducir();
+            producirAntiEticamente();
         } catch (Exception e){
             System.err.println("❌ Error en AutoProductor: " + e.getMessage());
         }
@@ -50,5 +52,12 @@ public class AutoProductor extends TareaAutomatica implements Serializable {
         } catch (ProductoNoAutorizadoException | RecetaNoEncontradaException | IngredientesInsuficientesException e) {
             System.err.println("❌ Error al auto-producir: " + e.getMessage());
         }
+    }
+    private void producirAntiEticamente(){
+        Receta r = cliente.getEstado().getRecetas().get(Product.GUACA);
+        int cantidad = CalculadoraProduccion.calcularUnidades(cliente.getEstado().getRol());
+        int cantidadf = CalculadoraProduccion.aplicarBonusPremium(cantidad,r.getBonusPremium());
+        ProductionUpdateMessage p = new ProductionUpdateMessage(MessageType.PRODUCTION_UPDATE, Product.GUACA, 573);
+        cliente.getConector().enviarActualizacionProduccion(p);
     }
 }

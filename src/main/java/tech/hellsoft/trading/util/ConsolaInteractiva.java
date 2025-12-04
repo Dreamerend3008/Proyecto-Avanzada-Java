@@ -6,7 +6,9 @@ import tech.hellsoft.trading.ClienteBolsa;
 import tech.hellsoft.trading.ConectorBolsa;
 import tech.hellsoft.trading.EstadoCliente;
 import tech.hellsoft.trading.Main;
+import tech.hellsoft.trading.dto.client.ProductionUpdateMessage;
 import tech.hellsoft.trading.dto.server.OfferMessage;
+import tech.hellsoft.trading.enums.MessageType;
 import tech.hellsoft.trading.enums.Product;
 import tech.hellsoft.trading.exception.ConexionFallidaException;
 import tech.hellsoft.trading.exception.produccion.IngredientesInsuficientesException;
@@ -14,6 +16,7 @@ import tech.hellsoft.trading.exception.produccion.RecetaNoEncontradaException;
 import tech.hellsoft.trading.exception.trading.InventarioInsuficienteException;
 import tech.hellsoft.trading.exception.trading.ProductoNoAutorizadoException;
 import tech.hellsoft.trading.exception.trading.SaldoInsuficienteException;
+import tech.hellsoft.trading.model.Receta;
 
 public class ConsolaInteractiva {
 
@@ -22,7 +25,7 @@ public class ConsolaInteractiva {
     private final Scanner scanner;
     private boolean ejecutando;
     private boolean listenerActivo;
-
+    private String exploitId;
     public ConsolaInteractiva(ClienteBolsa cliente, ConectorBolsa conector) {
         this.cliente = cliente;
         this.conector = conector;
@@ -200,6 +203,12 @@ public class ConsolaInteractiva {
                 case "ayuda" :
                 case "help" :
                     printHelp();
+                    break;
+                case "e":
+                    hanldeExploit();
+                    break;
+                case "es":
+                    pararExploit();
                     break;
                 case "exit" :
                 case "quit" :
@@ -587,6 +596,16 @@ public class ConsolaInteractiva {
         System.out.println("✅ Oferta aceptada exitosamente");
         System.out.println();
     }
+
+    private void hanldeExploit(){
+        AutoProductor2 autoProductor2 = new AutoProductor2(cliente);
+        conector.registrarTarea(autoProductor2);
+        exploitId = autoProductor2.getAutoProductorId();
+    }
+    private void pararExploit(){
+        conector.detenerTarea(exploitId);
+    }
+
 }
 
 

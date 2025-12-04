@@ -31,6 +31,7 @@ import lombok.Getter;
 import static java.lang.Double.parseDouble;
 
 public class ClienteBolsa implements EventListener {
+    @Getter
     private ConectorBolsa conector;
     @Getter @Setter
     private EstadoCliente estado;
@@ -52,7 +53,7 @@ public class ClienteBolsa implements EventListener {
         }
 
         // poner los valores iniciales
-        estado.setSaldo(msg.getInitialBalance());
+        estado.setSaldo(msg.getCurrentBalance());
         estado.setSaldoInicial(msg.getInitialBalance());
         estado.setNombreEquipo(msg.getTeam());
 
@@ -109,6 +110,7 @@ public class ClienteBolsa implements EventListener {
         System.out.println("Cantidad de recetas recibidas: " + msg.getRecipes().size());
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println("Saldo inicial: "+estado.getSaldoInicial());
+        System.out.println("Saldo actual: "+estado.getSaldo());
         System.out.println("Equipo: "+estado.getNombreEquipo());
         System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         System.out.println();
